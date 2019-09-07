@@ -1,8 +1,4 @@
 
-library(tidyverse)
-library(rlang)
-
-
 ## Usage ---------------------------------------------------------------------------
 
 #' Parse single report
@@ -20,11 +16,11 @@ library(rlang)
 
 ## Definitions ---------------------------------------------------------------------------
 
-cld.amt <- exprs(FEW, SCT, BKN, OVC) %>% as.character %>% paste(collapse = "|")
-desc <- exprs(MI, BC, PR, DR, BL, SH, TS, FZ) %>% as.character %>% paste(collapse = "|")
-ph <- exprs(DZ, RA, SN, SG, PL, GR, GS, UP, FG, BR, FU, VA, DU, SA, HZ, PO, SQ, FC, SS, DS, NSW, TS, SH)
-wdir <- exprs(NE, SE, SW,  NW, N, E, S, W) %>% as.character %>% paste(collapse = "|")
+cld.amt <- c("FEW", "SCT", "BKN", "OVC") %>% paste(collapse = "|")
+desc <- c("MI", "BC", "PR", "DR", "BL", "SH", "TS", "FZ") %>% paste(collapse = "|")
+ph <- c("DZ", "RA", "SN", "SG", "PL", "GR", "GS", "UP", "FG", "BR", "FU", "VA", "DU", "SA", "HZ", "PO", "SQ", "FC", "SS", "DS", "NSW", "TS", "SH")
 ph <- ph %>% as.character %>% paste(collapse = "|") %>% paste0("|\\/\\/")
+wdir <- rlang::exprs("NE", "SE", "SW", "NW", "N", "E", "S", "W")  %>% paste(collapse = "|")
 
 ## Output Columns ---------------------------------------------------------------------------
 
@@ -103,14 +99,17 @@ rules <- list(
 
 ## Functions ---------------------------------------------------------------------------
 
+#' Convert \code{data.frame} to \code{list}.
+#'
+#' @author M. Saenger
+#' @description parse a METAR report
+#' @param str A \code{character} object.
+#' @param verbose Show comments
+#' @export
+#' @examples
+#' parse_metar("LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG")
+
 parse_metar <- function(str, verbose = F){
-  #' @author M. Saenger
-  #' @example  "LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG" %>% parse_metar()
-  #' @description parse a METAR report
-  #' @details
-
-  require(tidyverse)
-
   str.in <- str
   if(verbose) print(str)
 
@@ -129,9 +128,9 @@ parse_metar <- function(str, verbose = F){
         # Remove matched section from string
         str <<- stringr::str_remove(str, paste0("^", x$regex, "(\\h)?"))
         # Create named list from matches
-        el.result <- el.match[,-1] %>% as.list %>% setNames(x$names)
+        el.result <- el.match[,-1] %>% as.list %>% stats::setNames(x$names)
         # Coerce type
-        suppressWarnings(map2(el.result, cols[names(el.result)], ~ exec(paste("as", .y$type, sep = "."), .x)))
+        suppressWarnings(purrr::map2(el.result, cols[names(el.result)], ~ rlang::exec(paste("as", .y$type, sep = "."), .x)))
       }
     })
     el.list
@@ -140,48 +139,58 @@ parse_metar <- function(str, verbose = F){
   if(verbose) str(sec.list)
 
   # Flatten list, e. g. cld_hgt nested list becomes cld_hgt, cld_hgt1, cld_hgt2, ...
-  dt <- map(sec.list, bind_cols) %>% purrr:::flatten() %>% bind_cols()
+  dt <- purrr::map(sec.list, dplyr::bind_cols) %>% purrr::flatten() %>%  dplyr::bind_cols()
 
   # Add required missing columns
-  cols.required <- map(keep(cols, ~.x$required), ~exec(.x$type, 0))
+  cols.required <- purrr::map(purrr::keep(cols, ~.x$required), ~rlang::exec(.x$type, 0))
 
   dt %>%
-    bind_rows(cols.required) %>%
-    mutate(metar = str.in)
+    dplyr::bind_rows(cols.required) %>%
+    dplyr::mutate(metar = str.in)
 }
 
-process_metar <- function(dat, month = NULL, year = NULL, col.drop = NULL, verbose = F){
-  #' @author M. Saenger
-  #' @example  "LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG" %>% parse_metar() %>% process_metar()
-  #' @description processes a data.frame of parsed METAR reports
-  #' @details if not specified month/year taken from Sys.Date()
+#' Convert \code{data.frame} to \code{list}.
+#'
+#' @author M. Saenger
+#' @description processes a data.frame of parsed METAR reports
+#' @importFrom  magrittr %>%
+#' @importFrom utils str
+#' @importFrom stats setNames time
+#' @importFrom rlang .data
+#' @param dat A \code{data.frame} object.
+#' @param month Set month of METAR report
+#' @param year Set year of METAR report
+#' @param col.drop Columns to drop after processing
+#' @param verbose Show comments
+#' @export
+#' @examples
+#' process_metar(parse_metar("LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG"))
 
-  require(tidyverse)
-  require(lubridate)
+process_metar <- function(dat, month = NULL, year = NULL, col.drop = NULL, verbose = F){
 
   if(verbose) str(dat)
 
   # if not specified month/year taken from Sys.Date()
-  month <- if(is.null(month)) month(Sys.Date())
-  year <- if(is.null(year)) year(Sys.Date())
+  month <- if(is.null(month)) lubridate::month(Sys.Date())
+  year <- if(is.null(year)) lubridate::year(Sys.Date())
 
   # Columns to drop after processing
   col.drop <- c("qnh_unit", "tt_sign", "td_sign", "ff_unit", "vis_unit", "vis_numeric", "dd", "hh", "mm") %>% c(col.drop)
 
   # Process
   dat %>%
-    mutate_if(is.character, ~ str_replace(., "^[\\/]{2,5}$", NA_character_)) %>%
-    mutate(
+    dplyr::mutate_if(is.character, ~ stringr::str_replace(., "^[\\/]{2,5}$", NA_character_)) %>%
+    dplyr::mutate(
       time = as.POSIXct(sprintf("%04d-%02d-%02d %02d:%02d:00", year, month, dd, hh, mm), tz = "UTC"),
-      ff = case_when(ff_unit == "MPS" ~ ff*1.9438, TRUE ~ as.numeric(ff)),
-      fx = case_when(ff_unit == "MPS" ~ fx*1.9438, TRUE ~ as.numeric(fx)),
-      vis_numeric = map_dbl(vis, ~ eval(parse(text = str_replace(.x, " ", "+")))),
-      vis = case_when(vis_unit == "SM" ~ vis_numeric*1609.344, vis_unit == "KM" ~ vis_numeric*1e3, TRUE ~ vis_numeric), #1609.344 1852.216
-      tt = case_when(tt_sign == "M" ~ -tt, TRUE ~ tt),
-      td = case_when(td_sign == "M" ~ -td, TRUE ~ td),
-      qnh = case_when(qnh_unit == "A" ~ as.integer(substr(qnh, 0, 4))/0.02953/100, TRUE ~ as.numeric(qnh)),
+      ff = dplyr::case_when(ff_unit == "MPS" ~ ff*1.9438, TRUE ~ as.numeric(ff)),
+      fx = dplyr::case_when(ff_unit == "MPS" ~ fx*1.9438, TRUE ~ as.numeric(fx)),
+      vis_numeric = purrr::map_dbl(vis, ~ eval(parse(text = stringr::str_replace(.x, " ", "+")))),
+      vis = dplyr::case_when(vis_unit == "SM" ~ vis_numeric*1609.344, vis_unit == "KM" ~ vis_numeric*1e3, TRUE ~ vis_numeric), #1609.344 1852.216
+      tt = dplyr::case_when(tt_sign == "M" ~ -tt, TRUE ~ tt),
+      td = dplyr::case_when(td_sign == "M" ~ -td, TRUE ~ td),
+      qnh = dplyr::case_when(qnh_unit == "A" ~ as.integer(substr(qnh, 0, 4))/0.02953/100, TRUE ~ as.numeric(qnh)),
     ) %>%
-    dplyr::select(icao, time, everything(), -one_of(col.drop))
+    dplyr::select(icao, time, dplyr::everything(), -dplyr::one_of(col.drop))
 }
 
 
