@@ -1,30 +1,16 @@
 
-## Usage ---------------------------------------------------------------------------
-
-#' Parse single report
-#' "LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG" %>% parse_metar()
-#'
-#' Parse multiple reports
-#' metar <- c("LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG", "LFKJ 071130Z AUTO 24011KT CAVOK 27/17 Q1015 NOSIG")
-#' sapply(metar, parse_metar) %>% bind_rows()
-#'
-#' Process single report
-#' "LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG" %>% parse_metar() %>% process_metar
-#'
-#' Process multiple reports
-#' sapply(metar, parse_metar) %>% bind_rows()  %>% process_metar
-
-## Definitions ---------------------------------------------------------------------------
-
-cld.amt <- c("FEW", "SCT", "BKN", "OVC") %>% paste(collapse = "|")
-desc <- c("MI", "BC", "PR", "DR", "BL", "SH", "TS", "FZ") %>% paste(collapse = "|")
-ph <- c("DZ", "RA", "SN", "SG", "PL", "GR", "GS", "UP", "FG", "BR", "FU", "VA", "DU", "SA", "HZ", "PO", "SQ", "FC", "SS", "DS", "NSW", "TS", "SH")
-ph <- ph %>% as.character %>% paste(collapse = "|") %>% paste0("|\\/\\/")
-wdir <- rlang::exprs("NE", "SE", "SW", "NW", "N", "E", "S", "W")  %>% paste(collapse = "|")
-
+metar.env <- list2env(
+  list(
+    cld.amt = c("FEW", "SCT", "BKN", "OVC") %>% paste(collapse = "|"),
+    desc = c("MI", "BC", "PR", "DR", "BL", "SH", "TS", "FZ") %>% paste(collapse = "|"),
+    ph = c("DZ", "RA", "SN", "SG", "PL", "GR", "GS", "UP", "FG", "BR", "FU", "VA", "DU", "SA", "HZ", "PO", "SQ", "FC", "SS", "DS", "NSW", "TS", "SH") %>%
+      paste(collapse = "|") %>% paste0("|\\/\\/"),
+    wdir = c("NE", "SE", "SW", "NW", "N", "E", "S", "W")  %>% paste(collapse = "|")
+  )
+)
 ## Output Columns ---------------------------------------------------------------------------
 
-cols <- list(
+metar.env$cols <- list(
   ts = list(name = "Timestamp", type = "integer", required = T),
   type = list(name = "Type", type = "character", required = F),
   cor = list(name = "Correction", type = "character", required = F),
@@ -74,7 +60,7 @@ cols <- list(
 
 ## Regular Expressions ---------------------------------------------------------------------------
 
-rules <- list(
+metar.env$rules <- list(
   ts = list(regex = "\\[ST\\]([0-9]{14})\\[T\\]", n = 1, names = "ts"),
   type = list(regex = "(METAR|SPECI)", n = 1, names = "type"),
   icao =  list(regex = "([A-Z0-9]{4})", n = 1, names = "icao"),
@@ -84,26 +70,26 @@ rules <- list(
   wind =  list(regex = "([0-9VRB\\/]{3})?([0-9\\/]{2})G?([0-9]{2})?(KT|MPH|MPS)", n = 1, names = c("dir", "ff", "fx", "ff_unit")),
   wind_var =  list(regex = "([0-9\\/]{3})V([0-9\\/]{3})", n = 1, names = c("dir_from", "dir_to")),
   vis =  list(regex = "M?([0-9]{4}(?=\\h?)|[\\/]{4}(?=\\h?)|[0-9]{1,2}(?=SM|KM)|[0-9]{1}\\/[0-9]{1}(?=SM|KM)|[0-9]{1}\\h[0-9]{1}\\/[0-9]{1}(?=SM|KM?))(SM|KM)?(NDV)?", n = 1, names = c("vis", "vis_unit", "ndv")),
-  min_vis =  list(regex = sprintf("([0-9]{4})(%s)", wdir), n = 1, names = c("min_vis", "min_vis_dir")),
+  min_vis =  list(regex = sprintf("([0-9]{4})(%s)", metar.env$wdir), n = 1, names = c("min_vis", "min_vis_dir")),
   rvr =  list(regex = "R([0-9\\/CRL]{2,3})\\/(P|M|\\/)?([0-9\\/]{4})(D|U|N)?V?(P|M)?([0-9]{4})?(FT)?", n = 4, names = c("rwy", "rwr_min_exc", "rvr_min", "rvr_tend", "rwr_max_exc", "rwr_max", "rvr_unit")),
-  pw =  list(regex = sprintf("(\\+|\\-|VC)?(%s)?((?:%s){1,3})\\h", desc, ph), n = 3, names = c("int", "dc", "ph")),
-  vvis = list(regex = sprintf("VV([0-9|\\/]{3})", desc, ph), n = 1, names = c("vvis")),
+  pw =  list(regex = sprintf("(\\+|\\-|VC)?(%s)?((?:%s){1,3})\\h", metar.env$desc, metar.env$ph), n = 3, names = c("int", "dc", "ph")),
+  vvis = list(regex = sprintf("VV([0-9|\\/]{3})", metar.env$desc, metar.env$ph), n = 1, names = c("vvis")),
   wx = list(regex = "(CAVOK|NSC|NCD|WXNIL|CLR|SKC)", n = 1, names = "wx"),
-  cld =  list(regex =  sprintf("(%s|[\\/]{3})([0-9]{3}|[\\/]{3})([A-Z]{2,3}|\\/\\/\\/)?", cld.amt), n = 5, names = c("cld_amt", "cld_hgt", "cld_type")),
+  cld =  list(regex =  sprintf("(%s|[\\/]{3})([0-9]{3}|[\\/]{3})([A-Z]{2,3}|\\/\\/\\/)?", metar.env$cld.amt), n = 5, names = c("cld_amt", "cld_hgt", "cld_type")),
   tttd = list(regex = "(M)?([0-9]{2})/(M)?([0-9]{2})?", n = 1, names = c("tt_sign", "tt", "td_sign", "td")),
   qnh = list(regex = "(Q|A)([0-9]{4})", n = 1, names = c("qnh_unit", "qnh")),
-  recent = list(regex = sprintf("RE(%s{1,3})\\h", ph), n = 1, names = c("recent")),
+  recent = list(regex = sprintf("RE(%s{1,3})\\h", metar.env$ph), n = 1, names = c("recent")),
   trend = list(regex = "(NOSIG|TEMPO|BECMG)\\h?(.*?)(?=RMK|$)", n = 2, names = c("trend_ind", "trend_str")),
   rmk = list(regex = "RMK\\h(.+)$", n = 1, names = "rmk")
 )
 
 ## Functions ---------------------------------------------------------------------------
 
-#' Convert \code{data.frame} to \code{list}.
+#' Parse a METAR report
 #'
 #' @author M. Saenger
-#' @description parse a METAR report
-#' @param str A \code{character} object.
+#' @description Parse a METAR report
+#' @param str A METAR string.
 #' @param verbose Show comments
 #' @export
 #' @examples
@@ -114,7 +100,7 @@ parse_metar <- function(str, verbose = F){
   if(verbose) print(str)
 
   # Loop rules
-  sec.list <- purrr::imap(rules, function(x , name){
+  sec.list <- purrr::imap(metar.env$rules, function(x , name){
 
     # Loop rule multiple times (pw, cld) if applicable
     el.list <- purrr::map(1:x$n, function(i){
@@ -130,7 +116,7 @@ parse_metar <- function(str, verbose = F){
         # Create named list from matches
         el.result <- el.match[,-1] %>% as.list %>% stats::setNames(x$names)
         # Coerce type
-        suppressWarnings(purrr::map2(el.result, cols[names(el.result)], ~ rlang::exec(paste("as", .y$type, sep = "."), .x)))
+        suppressWarnings(purrr::map2(el.result, metar.env$cols[names(el.result)], ~ rlang::exec(paste("as", .y$type, sep = "."), .x)))
       }
     })
     el.list
@@ -142,22 +128,22 @@ parse_metar <- function(str, verbose = F){
   dt <- purrr::map(sec.list, dplyr::bind_cols) %>% purrr::flatten() %>%  dplyr::bind_cols()
 
   # Add required missing columns
-  cols.required <- purrr::map(purrr::keep(cols, ~.x$required), ~rlang::exec(.x$type, 0))
+  cols.required <- purrr::map(purrr::keep(metar.env$cols, ~.x$required), ~rlang::exec(.x$type, 0))
 
   dt %>%
     dplyr::bind_rows(cols.required) %>%
     dplyr::mutate(metar = str.in)
 }
 
-#' Convert \code{data.frame} to \code{list}.
+#' Processes a data.frame of parsed METAR reports
 #'
 #' @author M. Saenger
-#' @description processes a data.frame of parsed METAR reports
+#' @description Processes a data.frame of parsed METAR reports
 #' @importFrom  magrittr %>%
 #' @importFrom utils str
 #' @importFrom stats setNames time
 #' @importFrom rlang .data
-#' @param dat A \code{data.frame} object.
+#' @param dat A \code{data.frame} object (output from parse_metar).
 #' @param month Set month of METAR report
 #' @param year Set year of METAR report
 #' @param col.drop Columns to drop after processing

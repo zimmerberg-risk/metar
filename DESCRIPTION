@@ -2,10 +2,13 @@ Package: metar
 Type: Package
 Title: Parse METAR reports
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
+Authors@R: 
+    person(given = "Matthias",
+           family = "Sänger",
+           role = c("aut", "cre"),
+           email = "ms@zimmerberg-risk.ch")
 Description: Parse METAR reports
-License: What license is it under?
+License: -
 Encoding: UTF-8
 LazyData: true
 Depends:
@@ -17,4 +20,5 @@ Imports:
     purrr,
     stringr,
     lubridate
+Roxygen: list(markdown = TRUE)
 RoxygenNote: 6.1.1

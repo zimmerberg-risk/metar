@@ -1,4 +1,24 @@
 
+## Usage ---------------------------------------------------------------------------
+
+#' Parse single report
+#' "LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG" %>% parse_metar()
+#'
+#' Parse multiple reports
+#' metar <- c("LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG", "LFKJ 071130Z AUTO 24011KT CAVOK 27/17 Q1015 NOSIG")
+#' sapply(metar, parse_metar) %>% bind_rows()
+#'
+#' Process single report
+#' "LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG" %>% parse_metar() %>% process_metar
+#'
+#' Process multiple reports
+#' sapply(metar, parse_metar) %>% bind_rows()  %>% process_metar
+
+## Definitions ---------------------------------------------------------------------------
+
+library(metar)
+library(tidyverse)
+library(lubridate)
 
 ## Test Data Set ---------------------------------------------------------------------------
 
@@ -8,14 +28,14 @@ test <- c(
   # Remark
   "RJTT 241900Z 02016G37KT 6000 -SHRA FEW015 BKN025 BKN040 23/22 Q1008 NOSIG RMK 1CU015 5CU025 7SC040 A",
   # Empty cloud group
-  "EGLL 081420Z AUTO 29006KT 260V340 9999 VCTS SCT038/// //////CB 25/15 Q1023 TEMPO 4000 +TSRA", 
+  "EGLL 081420Z AUTO 29006KT 260V340 9999 VCTS SCT038/// //////CB 25/15 Q1023 TEMPO 4000 +TSRA",
   # COR Correction
   "KBBG 271945Z COR 33008KT 10SM SCT029 BKN250 27/19 A3003",
   # VIS: statute miles
   "KAUS 092135Z 26018G25KT 8SM -TSRA BR SCT045CB BKN060 OVC080 30/21 A2992",
   # VIS: factional statute miles
-  "KCLT 232327Z VRB03G17KT 1/2SM R18C/1800V4000FT +TSRA FG SCT009 BKN029 OVC045CB 22/21 A3007 RMK", 
-  "KCLT 232327Z VRB03G17KT 1 1/2SM R18C/1800V4000FT +TSRA FG SCT009 BKN029 OVC045CB 22/21 A3007 RMK", 
+  "KCLT 232327Z VRB03G17KT 1/2SM R18C/1800V4000FT +TSRA FG SCT009 BKN029 OVC045CB 22/21 A3007 RMK",
+  "KCLT 232327Z VRB03G17KT 1 1/2SM R18C/1800V4000FT +TSRA FG SCT009 BKN029 OVC045CB 22/21 A3007 RMK",
   # Missing cloud section fragments
   "LFKB 241300Z AUTO 10007KT 050V140 9999 BKN030/// BKN042/// ///TCU 28/21 Q1017 TEMPO FEW035CB BKN090",
   # Trend: TEMPO and NOSIG
@@ -35,17 +55,17 @@ test <- c(
 
 ## Run Test ---------------------------------------------------------------------------
 
-dat <- sapply(test, parse_metar, verbose = F) %>% bind_rows() 
+dat <- sapply(test, parse_metar, verbose = F) %>% bind_rows()
 process_metar(dat = dat, col.drop = c("metar", "rmk"), verbose = F)
 
 ## Run Live Data ---------------------------------------------------------------------------
 
 # Station filter (REGEX)
-station.filter <- "^LF" # ^LS (Swiss stations) ^LF (French stations) ^K (US stations)
+station.filter <- "^Y" # ^LS (Swiss stations) ^LF (French stations) ^K (US stations)
 
 # Get time
 time.local <- Sys.time()
-attr(time.local, "tzone") <- "UTC" 
+attr(time.local, "tzone") <- "UTC"
 time.floor <- lubridate::floor_date(time.local, "1 hour")
 
 # Station meta data
@@ -57,14 +77,15 @@ dt.lines <- read_lines(url.data)
 dt.metar <- dt.lines[grepl("^([A-Z]{4}).+", dt.lines)]
 
 str <- dt.metar[grepl(station.filter, dt.metar)]
-dat <- sapply(str, parse_metar, verbose = F) %>% bind_rows() 
+dat <- sapply(str, parse_metar, verbose = F) %>% bind_rows()
 res <- process_metar(dat = dat, col.drop = c("metar"), verbose = F)
 
 # Pick latest report by station
 res %>%
   arrange(time) %>%
   distinct(icao, .keep_all = T) %>%
-  ggplot(aes(icao, tt)) + geom_bar(stat = "identity")
+  filter(!is.na(fx)) %>%
+  ggplot(aes(icao, fx)) + geom_bar(stat = "identity")
 
 
 ## Run Live Data ---------------------------------------------------------------------------
@@ -75,11 +96,11 @@ col.pos <- fwf_positions(col.start, c(col.start[-1] - 1, NA), col_names = col.na
 
 station.lines <- read_lines(url.station, skip = 39)
 station.lines <- station.lines[map_int(station.lines, nchar) > 80]
-dt.station <- read_fwf(station.lines, col_positions = col.pos) 
+dt.station <- read_fwf(station.lines, col_positions = col.pos)
 
 dt.station %>% filter(ctry == "VI")
 
-dt.station <- dt.station %>% 
+dt.station <- dt.station %>%
   #filter(icao == "LSZH") %>%
   separate(lat_min, c("lat_num", "ns"), sep = -1, remove = F) %>%
   separate(lon_min, c("lon_num", "we"), sep = -1, remove = F) %>%
@@ -89,7 +110,7 @@ dt.station <- dt.station %>%
   ) %>%
   dplyr::select(name, icao, x, y, z)
 
-# Worldwide 
+# Worldwide
 system.time({dat <- sapply(dt.metar[grepl("^.*", dt.metar)], parse_metar, verbose = F) %>% bind_rows()})
 res <- process_metar(dat, verbose = F)
 write_delim(res, file.path(dir, "out.csv"), delim = ";")

@@ -2,13 +2,13 @@
 % Please edit documentation in R/metar.R
 \name{process_metar}
 \alias{process_metar}
-\title{Convert \code{data.frame} to \code{list}.}
+\title{Processes a data.frame of parsed METAR reports}
 \usage{
 process_metar(dat, month = NULL, year = NULL, col.drop = NULL,
   verbose = F)
 }
 \arguments{
-\item{dat}{A \code{data.frame} object.}
+\item{dat}{A \code{data.frame} object (output from parse_metar).}
 
 \item{month}{Set month of METAR report}
 
@@ -19,7 +19,7 @@ process_metar(dat, month = NULL, year = NULL, col.drop = NULL,
 \item{verbose}{Show comments}
 }
 \description{
-processes a data.frame of parsed METAR reports
+Processes a data.frame of parsed METAR reports
 }
 \examples{
 process_metar(parse_metar("LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG"))

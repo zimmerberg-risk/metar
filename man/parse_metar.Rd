@@ -2,17 +2,17 @@
 % Please edit documentation in R/metar.R
 \name{parse_metar}
 \alias{parse_metar}
-\title{Convert \code{data.frame} to \code{list}.}
+\title{Parse a METAR report}
 \usage{
 parse_metar(str, verbose = F)
 }
 \arguments{
-\item{str}{A \code{character} object.}
+\item{str}{A METAR string.}
 
 \item{verbose}{Show comments}
 }
 \description{
-parse a METAR report
+Parse a METAR report
 }
 \examples{
 parse_metar("LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG")
