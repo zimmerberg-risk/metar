@@ -61,7 +61,7 @@ process_metar(dat = dat, col.drop = c("metar", "rmk"), verbose = F)
 ## Run Live Data ---------------------------------------------------------------------------
 
 # Station filter (REGEX)
-station.filter <- "^Y" # ^LS (Swiss stations) ^LF (French stations) ^K (US stations)
+station.filter <- "^LSZ" # ^LS (Swiss stations) ^LF (French stations) ^K (US stations)
 
 # Get time
 time.local <- Sys.time()
@@ -72,20 +72,20 @@ time.floor <- lubridate::floor_date(time.local, "1 hour")
 url.station <- "https://www.aviationweather.gov/docs/metar/stations.txt"
 
 # Latest cycle file from NOAA
-url.data <- sprintf("https://tgftp.nws.noaa.gov/data/observations/metar/cycles/%2dZ.TXT", hour(time.floor))
+url.data <- sprintf("https://tgftp.nws.noaa.gov/data/observations/metar/cycles/%02dZ.TXT", hour(time.floor))
 dt.lines <- read_lines(url.data)
 dt.metar <- dt.lines[grepl("^([A-Z]{4}).+", dt.lines)]
 
 str <- dt.metar[grepl(station.filter, dt.metar)]
-dat <- sapply(str, parse_metar, verbose = F) %>% bind_rows()
+dat <- lapply(str, parse_metar, verbose = F) %>% bind_rows()
 res <- process_metar(dat = dat, col.drop = c("metar"), verbose = F)
 
 # Pick latest report by station
 res %>%
   arrange(time) %>%
   distinct(icao, .keep_all = T) %>%
-  filter(!is.na(fx)) %>%
-  ggplot(aes(icao, fx)) + geom_bar(stat = "identity")
+  filter(!is.na(ff)) %>%
+  ggplot(aes(icao, ff)) + geom_bar(stat = "identity")
 
 
 ## Run Live Data ---------------------------------------------------------------------------
