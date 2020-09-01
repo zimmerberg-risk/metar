@@ -15,7 +15,6 @@ metar.env$cols <- list(
   type = list(name = "Type", type = "character", required = F),
   cor = list(name = "Correction", type = "character", required = F),
   icao = list(name = "ICAO", type = "character", required = T),
-  icao = list(name = "ICAO", type = "character", required = T),
   dd =  list(name = "Day", type = "integer", required = T),
   hh =  list(name = "Hour", type = "integer", required = T),
   mm =  list(name = "Minute", type = "integer", required = T),
