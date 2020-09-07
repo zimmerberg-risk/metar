@@ -4,8 +4,7 @@
 \alias{process_metar}
 \title{Processes a data.frame of parsed METAR reports}
 \usage{
-process_metar(dat, month = NULL, year = NULL, col.drop = NULL,
-  verbose = F)
+process_metar(dat, month = NULL, year = NULL, col.drop = NULL, verbose = FALSE)
 }
 \arguments{
 \item{dat}{A \code{data.frame} object (output from parse_metar).}

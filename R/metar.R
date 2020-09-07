@@ -70,7 +70,7 @@ metar.env$rules <- list(
   wind_var =  list(regex = "([0-9\\/]{3})V([0-9\\/]{3})", n = 1, names = c("dir_from", "dir_to")),
   vis =  list(regex = "M?([0-9]{4}(?=\\h?)|[\\/]{4}(?=\\h?)|[0-9]{1,2}(?=SM|KM)|[0-9]{1}\\/[0-9]{1}(?=SM|KM)|[0-9]{1}\\h[0-9]{1}\\/[0-9]{1}(?=SM|KM?))(SM|KM)?(NDV)?", n = 1, names = c("vis", "vis_unit", "ndv")),
   min_vis =  list(regex = sprintf("([0-9]{4})(%s)", metar.env$wdir), n = 1, names = c("min_vis", "min_vis_dir")),
-  rvr =  list(regex = "R([0-9\\/CRL]{2,3})\\/(P|M|\\/)?([0-9\\/]{4})(D|U|N)?V?(P|M)?([0-9]{4})?(FT)?", n = 4, names = c("rwy", "rwr_min_exc", "rvr_min", "rvr_tend", "rwr_max_exc", "rwr_max", "rvr_unit")),
+  rvr =  list(regex = "R([0-9\\/CRL]{2,3})\\/(P|P|M|\\/)?([0-9\\/]{4})(D|U|N)?V?(VP|P|M)?([0-9]{4})?(FT|D|U|N)?", n = 4, names = c("rwy", "rwr_min_exc", "rvr_min", "rvr_tend", "rwr_max_exc", "rwr_max", "rvr_unit")),
   pw =  list(regex = sprintf("(\\+|\\-|VC)?(%s)?((?:%s){1,3})\\h", metar.env$desc, metar.env$ph), n = 3, names = c("int", "dc", "ph")),
   vvis = list(regex = sprintf("VV([0-9|\\/]{3})", metar.env$desc, metar.env$ph), n = 1, names = c("vvis")),
   wx = list(regex = "(CAVOK|NSC|NCD|WXNIL|CLR|SKC)", n = 1, names = "wx"),
@@ -94,9 +94,10 @@ metar.env$rules <- list(
 #' @examples
 #' parse_metar("LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG")
 
-parse_metar <- function(str, verbose = F){
-  str.in <- str
+parse_metar <- function(str, verbose = FALSE){
   if(verbose) print(str)
+
+  str.in <- str
 
   # Loop rules
   sec.list <- purrr::imap(metar.env$rules, function(x , name){
@@ -124,7 +125,9 @@ parse_metar <- function(str, verbose = F){
   if(verbose) str(sec.list)
 
   # Flatten list, e. g. cld_hgt nested list becomes cld_hgt, cld_hgt1, cld_hgt2, ...
-  dt <- purrr::map(sec.list, dplyr::bind_cols) %>% purrr::flatten() %>%  dplyr::bind_cols()
+  #dt <- purrr::map(sec.list, dplyr::bind_cols) %>% purrr::flatten() %>%  dplyr::bind_cols()
+
+  dt <- lapply(sec.list, function(i) purrr::flatten(i)) %>% purrr::flatten() %>% as.data.frame()
 
   # Add required missing columns
   cols.required <- purrr::map(purrr::keep(metar.env$cols, ~.x$required), ~rlang::exec(.x$type, 0))
@@ -151,7 +154,7 @@ parse_metar <- function(str, verbose = F){
 #' @examples
 #' process_metar(parse_metar("LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG"))
 
-process_metar <- function(dat, month = NULL, year = NULL, col.drop = NULL, verbose = F){
+process_metar <- function(dat, month = NULL, year = NULL, col.drop = NULL, verbose = FALSE){
 
   if(verbose) str(dat)
 

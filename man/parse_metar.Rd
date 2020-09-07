@@ -4,7 +4,7 @@
 \alias{parse_metar}
 \title{Parse a METAR report}
 \usage{
-parse_metar(str, verbose = F)
+parse_metar(str, verbose = FALSE)
 }
 \arguments{
 \item{str}{A METAR string.}

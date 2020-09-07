@@ -1,7 +1,7 @@
 Package: metar
 Type: Package
 Title: Parse METAR reports
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: 
     person(given = "Matthias",
            family = "Sänger",
@@ -21,4 +21,4 @@ Imports:
     stringr,
     lubridate
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.0
