@@ -1,7 +1,7 @@
 Package: metar
 Type: Package
 Title: Parse METAR reports
-Version: 0.1.1
+Version: 0.2.0
 Authors@R: 
     person(given = "Matthias",
            family = "Sänger",
@@ -14,11 +14,15 @@ LazyData: true
 Depends:
     R (>= 2.15)
 Imports:
+    data.table,
     magrittr,
     rlang,
-    dplyr,
-    purrr,
     stringr,
-    lubridate
+    lubridate,
+    dplyr,
+    readr,
+    purrr,
+    tidyr,
+    curl
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.0

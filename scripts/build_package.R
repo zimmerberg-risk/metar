@@ -27,12 +27,33 @@ use_readme_rmd()
 use_r(package.name)
 use_test(package.name)
 usethis::use_ccby_license(name = "Zimmerberg Risk Analytics GmbH")
+usethis::use_namespace(roxygen = TRUE)
+
 
 # before checks/install
-devtools::document()
-#devtools::load_all()
-devtools::check()
-devtools::build()
 
-# https://github.com/m-saenger/parseDate
-devtools::install_github("m-saenger/parseDate")
+usethis:::use_data(
+  metar.groups,
+  metar.vars,
+  metar.vars.pw,
+  metar.vars.cld,
+  metar.vars.rvr,
+  pw.desc,
+  pw.ph,
+  internal=FALSE, overwrite=TRUE
+)
+usethis::use_data_table()
+usethis::use_pipe()
+usethis::use_package("data.table")
+usethis::use_package("purrr")
+usethis::use_package("readr")
+usethis::use_package("stringr")
+
+devtools::document()
+devtools::check()
+
+p <- devtools::build()
+devtools::install_local(p, force = TRUE, upgrade = "never")
+
+# https://github.com/m-saenger/metar
+devtools::install_github("m-saenger/metar")

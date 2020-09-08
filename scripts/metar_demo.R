@@ -55,20 +55,6 @@ test <- c(
   "LSZH 250350Z 32003KT 290V350 2000 R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U BCFG FEW001 SCT003 BKN140 16/16 Q1016 TEMPO BKN003"
 )
 
-# x <- "LSZH 250350Z 32003KT 290V350 2000 R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U BCFG FEW001 SCT003 BKN140 16/16 Q1016 TEMPO BKN003 BCMG XXX RMK ZULU"
-# r <- sub("(RMK)(TEMPO)(XXXXXX)", "\\1 \\2 \\3", x, fixed = TRUE)
-# gregexpr("TEMPO :: RMK", x, fixed = TRUE)
-#
-# regmatches(x, r)
-#
-# library(stringi)
-#
-# strsplit(s, "([0-9]{2})([0-9]{2})([0-9]{2})Z|TEMP|BCMG|ALT")
-
-#r <- purrr::map(metar.env$rules, "regex") %>% paste(collapse = "")
-#t <- "KFFO 271946Z 25006G10KT 260V340 10SM FEW009 SCT015 BKN027 BKN035 OVC044 25/22 A2986 RMK AO2A CIG 015V027 CIG 023 RWY05L SLP109"
-#r <- "([A-Z0-9]{4})?\\s([0-9]{2})([0-9]{2})([0-9]{2})Z\\s(?<=\\b)(COR)?(?=\\b)(?<=\\b)(AUTO)?(?=\\b)(?<=\\b)([0-9VRB\\/]{3})?([0-9\\/]{2})G?([0-9]{2})?(KT|MPH|MPS)?(?=\\b)(?<=\\b)([0-9\\/]{3})V([0-9\\/]{3})?(?=\\b)"
-
 ## Run Test ---------------------------------------------------------------------------
 
 dat <- lapply(test[16], parse_metar, verbose = FALSE) %>% bind_rows()
