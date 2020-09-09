@@ -33,13 +33,15 @@ usethis::use_namespace(roxygen = TRUE)
 # before checks/install
 
 usethis:::use_data(
-  metar.groups,
+  #metar.groups,
   metar.vars,
   metar.vars.pw,
   metar.vars.cld,
   metar.vars.rvr,
+  metar.test,
   pw.desc,
   pw.ph,
+  metar.ph,
   internal=FALSE, overwrite=TRUE
 )
 usethis::use_data_table()

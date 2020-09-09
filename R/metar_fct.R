@@ -46,14 +46,15 @@ parse_metar <- function(x, date = NULL){
   # Assign class and default value
   void <- lapply(intersect(names(dt), names(metar.vars)), function(i){
     var.name <- i
-      fct <- paste("as", metar.vars[[i]]$type, sep = ".")
+    type <- metar.vars[[i]]$type
+    fct <- ifelse(type != "POSIXct", paste("as", metar.vars[[i]]$type, sep = "."), "c") # Protext POSIXct (as.POSIXct fails)
     default <- metar.vars[[var.name]]$default
     dt[, (var.name) := lapply(.SD, fct), .SDcols = c(var.name)]
-    dt[, (var.name) := lapply(.SD, function(j) ifelse(is.na(j) & !is.null(default), default, j)), .SDcols = c(var.name)]
+    dt[is.na(dt[[var.name]]) & !is.null(default), (var.name) := default]
   })
 
   wind.conversion = list(KT = 1, MPH = 1.1507767864273, MPS = 0.514444)
-  vis.conversion = list(KM = 1, M = 0.001, SM = 1.852)
+  vis.conversion = list(KM = 1, M = 0.001, SM = 1.609344) # Statute miles
   qnh.conversion = list(Q = 1, A = 1/2.953)
   tt.conversion = list(M = -1, P = 1)
 
@@ -74,6 +75,78 @@ parse_metar <- function(x, date = NULL){
 
 }
 
+#' Parse a METAR cloud groups
+#'
+#' @author M. Saenger
+#' @param cld METAR cloud string
+#' @export
+#' @examples metar_clouds(cld = "FEW030 FEW032TCU SCT050 BKN075")
+#'
+metar_clouds <- function(cld){
+  m <- str_match_all(cld, "(FEW|SCT|BKN|OVC|[\\/]{3})([0-9]{3}|[\\/]{3})([A-Z]{2,3}|\\/\\/\\/)?")
+  dt.cloud <- data.table::rbindlist(lapply(seq_along(m), FUN = function(i){
+    dat <- rbind(m[[i]])
+    if(nrow(dat) == 0) dat <- rbind(rep(NA, 4))
+    dt <- data.table::setnames(data.frame(dat), names(metar.vars.cld))
+    dt$cld_group <- seq_len(nrow(dat))
+    dt$id <- i
+    dt
+  }))
+  void <- lapply(names(metar.vars.cld), function(i){
+    fct <- paste("as", metar.vars.cld[[i]]$type, sep = ".")
+    dt.cloud[, (i) := lapply(.SD, fct), .SDcols = c(i)]
+  })
+  data.table::dcast(dt.cloud[], id ~ cld_group, value.var = names(metar.vars.cld))
+}
+
+#' Parse a METAR RVR groups
+#'
+#' @author M. Saenger
+#' @param rvr METAR RVR string
+#' @export
+#' @examples metar_rvr(rvr = "R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U")
+#'
+metar_rvr <- function(rvr){
+  m <- str_match_all(rvr, "(R([0-9\\/CRL]{2,3})\\/(P|P|M|\\/)?([0-9\\/]{4})(D|U|N)?V?(VP|P|M)?([0-9]{4})?(FT|D|U|N)?){1,4}")
+  dt.rvr <- data.table::rbindlist(lapply(seq_along(m), FUN = function(i){
+    dat <- rbind(m[[i]][,-1])
+    if(nrow(dat) == 0) dat <- rbind(rep(NA, 8))
+    dt <- data.table::setnames(data.frame(dat), c("rvr_str", names(metar.vars.rvr)))
+    dt$rvr_group <- seq_len(nrow(dat))
+    dt$id <- i
+    dt
+  }))
+  void <- lapply(names(metar.vars.rvr), function(i){
+    fct <- paste("as", metar.vars.rvr[[i]]$type, sep = ".")
+    dt.rvr[, (i) := lapply(.SD, fct), .SDcols = c(i)]
+  })
+  data.table::dcast(dt.rvr[], id ~ rvr_group, value.var = names(metar.vars.rvr))
+}
+
+#' Parse a METAR PW groups
+#'
+#' @author M. Saenger
+#' @param pw METAR PW string
+#' @export
+#' @examples metar_pw(pw = "+TSRA BR VCTS")
+#'
+metar_pw <- function(pw){
+  m <- str_match_all(pw, sprintf("(\\+|\\-|VC)?(%s)?((?:%s){1,3})", paste(pw.desc, collapse = "|"), paste(pw.ph, collapse = "|")))
+  dt.pw <- data.table::rbindlist(lapply(seq_along(m), FUN = function(i){
+    dat <- rbind(m[[i]])
+    if(nrow(dat) == 0) dat <- rbind(rep(NA, 4))
+    dt <- data.table::setnames(data.frame(dat), c("pw_str", names(metar.vars.pw)))
+    dt$pw_group <- seq_len(nrow(dat))
+    dt$id <- i
+    dt
+  }))
+  void <- lapply(names(metar.vars.pw), function(i){
+    fct <- paste("as", metar.vars.pw[[i]]$type, sep = ".")
+    dt.pw[, (i) := lapply(.SD, fct), .SDcols = c(i)]
+  })
+  data.table::dcast(dt.pw[], id ~ pw_group, value.var = names(metar.vars.pw))
+}
+
 #' Read METAR reports from mesonet.agron.iastate.edu
 #'
 #' @author M. Saenger
@@ -82,11 +155,12 @@ parse_metar <- function(x, date = NULL){
 #' @param date_start Lorem Ipsum
 #' @param date_end Lorem Ipsum
 #' @param auto Lorem Ipsum
+#' @param verbose Lorem Ipsum
 #' @import curl
 #' @export
 #' @examples read_mesonet(id_icao = "KDEN", date_start = Sys.time() - 3600*24*1)
 #'
-read_mesonet <- function(id_icao = "KDEN", date_start = date_end - 3600*12, date_end = Sys.time(), auto = TRUE){
+read_mesonet <- function(id_icao = "HSSS", date_start = date_end - 3600*12, date_end = Sys.time(), auto = TRUE, verbose = FALSE){
 
   def <- list(
     station = id_icao,
@@ -105,7 +179,9 @@ read_mesonet <- function(id_icao = "KDEN", date_start = date_end - 3600*12, date
   url.1 <- "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?"
   url.2 <- purrr::imap(def, ~paste0(.y, "=", .x)) %>% paste0(collapse = "&")
   url <- sprintf("%s%s&tz=UTC&latlon=no&trace=T&direct=no&report_type=1&report_type=2", url.1, url.2)
-  data.table::fread(url, colClasses = c("character", "POSIXct", "character"))
+  if(verbose) print(url)
+  #data.table::fread(url, colClasses = c("character", "POSIXct", "character"))
+  readr::read_csv(url)
 }
 
 #' Get airport information from https://www.aviationweather.gov

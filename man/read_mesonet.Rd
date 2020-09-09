@@ -5,10 +5,11 @@
 \title{Read METAR reports from mesonet.agron.iastate.edu}
 \usage{
 read_mesonet(
-  id_icao = "KDEN",
+  id_icao = "HSSS",
   date_start = date_end - 3600 * 12,
   date_end = Sys.time(),
-  auto = TRUE
+  auto = TRUE,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ read_mesonet(
 \item{date_end}{Lorem Ipsum}
 
 \item{auto}{Lorem Ipsum}
+
+\item{verbose}{Lorem Ipsum}
 }
 \description{
 Read METAR reports from mesonet.agron.iastate.edu
