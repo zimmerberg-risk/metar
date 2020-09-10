@@ -1,7 +1,7 @@
 Package: metar
 Type: Package
 Title: Parse METAR reports
-Version: 0.2.1
+Version: 0.2.2
 Authors@R: 
     person(given = "Matthias",
            family = "Sänger",
@@ -25,4 +25,4 @@ Imports:
     tidyr,
     curl
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1

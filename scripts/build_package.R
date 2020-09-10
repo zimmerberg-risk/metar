@@ -7,8 +7,6 @@ library(available)
 #' https://usethis.r-lib.org/articles/articles/usethis-setup.html
 #' https://happygitwithr.com/ssh-keys.html
 #'
-
-
 package.name <- "metar"
 
 available(package.name)
@@ -55,7 +53,7 @@ devtools::document()
 devtools::check()
 
 p <- devtools::build()
-devtools::install_local(p, force = TRUE, upgrade = "never")
 
 # https://github.com/m-saenger/metar
-devtools::install_github("m-saenger/metar")
+devtools::install_local(p, force = TRUE, upgrade = "never")
+devtools::install_github("m-saenger/metar", upgrade = "never")

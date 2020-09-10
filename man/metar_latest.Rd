@@ -12,11 +12,7 @@ metar_latest(id_icao = "KDEN", latest = TRUE)
 \item{latest}{Lorem Ipsum}
 }
 \description{
-Get METARs from NOAA cycle files
-}
-\examples{
 metar_latest("LSZH")
-
 }
 \author{
 M. Saenger

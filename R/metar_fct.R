@@ -67,7 +67,7 @@ parse_metar <- function(x, date = NULL){
 
   # Calculate
   dt[, `:=`(ff = ff*wind_factor, fx = fx*wind_factor, qnh = qnh*qnh_factor, tt = tt*tt_factor, td = td*td_factor,
-            vis = unlist(lapply(str_replace(vis, " ", "+"), function(i) eval(parse(text = i))))*vis_factor)]
+            vis = unlist(lapply(str_replace(vis, " ", "+0"), function(i) eval(parse(text = i))))*vis_factor)]
 
   # Drop auxiliary columns
   drop.col <-  c(names(metar.vars)[unname(sapply(metar.vars, '[[', "drop")) == F])
@@ -225,7 +225,7 @@ read_station <- function(fi.name = ".+", fi.icao = ".+", fi.ctry = ".+", fi.lat 
 #' @param id_icao Lorem Ipsum
 #' @param latest Lorem Ipsum
 #' @export
-#' @examples metar_latest("LSZH")
+#' @description  metar_latest("LSZH")
 #'
 metar_latest <- function(id_icao = "KDEN", latest = TRUE){
   time.local <- Sys.time()

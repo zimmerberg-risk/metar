@@ -22,31 +22,31 @@ pw.ph = c("DZ", "RA", "SN", "SG", "PL", "GR", "GS", "UP", "FG", "BR", "FU", "VA"
 #' @export
 #'
 metar.ph <- list(
-  "TS" = list(name = "Thunderstorm", type = "Storm"),
-
-  "SQ" = list(name = "Squalls", type = "Storm"),
-  "FC" = list(name = "Funnel Cloud, Tornado", type = "Storm"),
-  "SN" = list(name = "Snow", type = "Precipitation"),
-  "SG" = list(name = "Snow Grains", type = "Precipitation"),
-  "PL" = list(name = "Ice Pellets", type = "Precipitation"),
-  "GR" = list(name = "Hail", type = "Precipitation"),
-  "GS" = list(name = "Snow Pellets", type = "Precipitation"),
-  "RA" = list(name = "Rain", type = "Precipitation"),
-  "DZ" = list(name = "Drizzle", type = "Precipitation"),
-  "SH" = list(name = "Shower", type = "Other"),
-  "UP" = list(name = "Unknown Precipitation", type = "Precipitation"),
-  "PO" = list(name = "Dust/Sand Whirls", type = "Storm"),
-  "SS" = list(name = "Sandstorm", type = "Storm"),
-  "DS" = list(name = "Duststorm", type = "Storm"),
-  "FG" = list(name = "Fog", type = "Obscuration"),
-  "SA" = list(name = "Sand", type = "Obscuration"),
-  "BR" = list(name = "Mist", type = "Obscuration"),
-  "FU" = list(name = "Smoke", type = "Obscuration"),
-  "VA" = list(name = "Volcanic Ash", type = "Obscuration"),
-  "DU" = list(name = "Dust", type = "Obscuration"),
-  "HZ" = list(name = "Haze", type = "Obscuration"),
-  "NSW" = list(name = "No Significant Weather", type = "Other")
+  "TS" = list(name = "Thunderstorm", type = "Storm", group = "Storm/Hail"),
+  "SQ" = list(name = "Squalls", type = "Storm", group = "Storm/Hail"),
+  "FC" = list(name = "Funnel Cloud, Tornado", type = "Storm", group = "Storm/Hail"),
+  "GR" = list(name = "Hail", type = "Precipitation", group = "Storm/Hail"),
+  "SN" = list(name = "Snow", type = "Precipitation", group = "Snow/Ice"),
+  "SG" = list(name = "Snow Grains", type = "Precipitation", group = "Snow/Ice"),
+  "PL" = list(name = "Ice Pellets", type = "Precipitation", group = "Snow/Ice"),
+  "GS" = list(name = "Snow Pellets", type = "Precipitation", group = "Snow/Ice"),
+  "RA" = list(name = "Rain", type = "Precipitation", group = "Rain/Shower"),
+  "DZ" = list(name = "Drizzle", type = "Precipitation", group = "Rain/Shower"),
+  "SH" = list(name = "Shower", type = "Other", group = "Rain/Shower"),
+  "UP" = list(name = "Unknown Precipitation", type = "Precipitation", group = "Rain/Shower"),
+  "PO" = list(name = "Dust/Sand Whirls", type = "Storm", group = "Sand-/Duststorm"),
+  "SS" = list(name = "Sandstorm", type = "Storm", group = "Sand-/Duststorm"),
+  "DS" = list(name = "Duststorm", type = "Storm", group = "Sand-/Duststorm"),
+  "FG" = list(name = "Fog", type = "Obscuration", group = "Fog"),
+  "SA" = list(name = "Sand", type = "Obscuration", group = "Sand/Ash/Dust"),
+  "BR" = list(name = "Mist", type = "Obscuration", group = "Mist/Haze"),
+  "FU" = list(name = "Smoke", type = "Obscuration", group = "Sand/Ash/Dust"),
+  "VA" = list(name = "Volcanic Ash", type = "Obscuration", group = "Sand/Ash/Dust"),
+  "DU" = list(name = "Dust", type = "Obscuration", group = "Sand/Ash/Dust"),
+  "HZ" = list(name = "Haze", type = "Obscuration", group = "Mist/Haze"),
+  "NSW" = list(name = "No Significant Weather", type = "Other", group = "NSW")
 )
+
 
 #' @name metar.vars
 #' @title Lorem Ipsum
