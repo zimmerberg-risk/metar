@@ -1,11 +1,19 @@
 
-#' @name pw.desc
+#' @name cld.amt
 #' @title Lorem Ipsum
 #' @docType data
 #' @keywords dataset
 #' @export
 #'
-pw.desc = c("MI", "BC", "PR", "DR", "BL", "SH", "TS", "FZ")
+cld.amt = c("NSC", "FEW", "SCT", "BKN", "OVC")
+
+#' @name pw.dc
+#' @title Lorem Ipsum
+#' @docType data
+#' @keywords dataset
+#' @export
+#'
+pw.dc = c("MI", "BC", "PR", "DR", "BL", "SH", "TS", "FZ")
 
 #' @name pw.ph
 #' @title Lorem Ipsum
@@ -22,29 +30,29 @@ pw.ph = c("DZ", "RA", "SN", "SG", "PL", "GR", "GS", "UP", "FG", "BR", "FU", "VA"
 #' @export
 #'
 metar.ph <- list(
-  "TS" = list(name = "Thunderstorm", type = "Storm", group = "Storm/Hail"),
-  "SQ" = list(name = "Squalls", type = "Storm", group = "Storm/Hail"),
-  "FC" = list(name = "Funnel Cloud, Tornado", type = "Storm", group = "Storm/Hail"),
-  "GR" = list(name = "Hail", type = "Precipitation", group = "Storm/Hail"),
-  "SN" = list(name = "Snow", type = "Precipitation", group = "Snow/Ice"),
-  "SG" = list(name = "Snow Grains", type = "Precipitation", group = "Snow/Ice"),
-  "PL" = list(name = "Ice Pellets", type = "Precipitation", group = "Snow/Ice"),
-  "GS" = list(name = "Snow Pellets", type = "Precipitation", group = "Snow/Ice"),
-  "RA" = list(name = "Rain", type = "Precipitation", group = "Rain/Shower"),
-  "DZ" = list(name = "Drizzle", type = "Precipitation", group = "Rain/Shower"),
-  "SH" = list(name = "Shower", type = "Other", group = "Rain/Shower"),
-  "UP" = list(name = "Unknown Precipitation", type = "Precipitation", group = "Rain/Shower"),
-  "PO" = list(name = "Dust/Sand Whirls", type = "Storm", group = "Sand-/Duststorm"),
-  "SS" = list(name = "Sandstorm", type = "Storm", group = "Sand-/Duststorm"),
-  "DS" = list(name = "Duststorm", type = "Storm", group = "Sand-/Duststorm"),
-  "FG" = list(name = "Fog", type = "Obscuration", group = "Fog"),
-  "SA" = list(name = "Sand", type = "Obscuration", group = "Sand/Ash/Dust"),
-  "BR" = list(name = "Mist", type = "Obscuration", group = "Mist/Haze"),
-  "FU" = list(name = "Smoke", type = "Obscuration", group = "Sand/Ash/Dust"),
-  "VA" = list(name = "Volcanic Ash", type = "Obscuration", group = "Sand/Ash/Dust"),
-  "DU" = list(name = "Dust", type = "Obscuration", group = "Sand/Ash/Dust"),
-  "HZ" = list(name = "Haze", type = "Obscuration", group = "Mist/Haze"),
-  "NSW" = list(name = "No Significant Weather", type = "Other", group = "NSW")
+  "TS" = list(name = "Thunderstorm", type = "Storm", subtype = "", group = "Storm/Hail"),
+  "SQ" = list(name = "Squalls", type = "Storm", subtype = "", group = "Storm/Hail"),
+  "FC" = list(name = "Funnel Cloud, Tornado", type = "Storm", subtype = "", group = "Storm/Hail"),
+  "GR" = list(name = "Hail", type = "Precipitation", subtype = "Solid", group = "Storm/Hail"),
+  "SN" = list(name = "Snow", type = "Precipitation", subtype = "Solid", group = "Snow/Ice"),
+  "SG" = list(name = "Snow Grains", type = "Precipitation", subtype = "Solid", group = "Snow/Ice"),
+  "PL" = list(name = "Ice Pellets", type = "Precipitation", subtype = "Solid", group = "Snow/Ice"),
+  "GS" = list(name = "Snow Pellets", type = "Precipitation", subtype = "Solid", group = "Snow/Ice"),
+  "RA" = list(name = "Rain", type = "Precipitation", subtype = "Liquid", group = "Rain/Shower"),
+  "DZ" = list(name = "Drizzle", type = "Precipitation", subtype = "Liquid", group = "Rain/Shower"),
+  "SH" = list(name = "Shower", type = "Other", subtype = "Unknown", group = "Rain/Shower"),
+  "UP" = list(name = "Unknown Precipitation", type = "Precipitation", subtype = "Unknown", group = "Rain/Shower"),
+  "PO" = list(name = "Dust/Sand Whirls", type = "Storm", subtype = "", group = "Sand-/Duststorm"),
+  "SS" = list(name = "Sandstorm", type = "Storm", subtype = "", group = "Sand-/Duststorm"),
+  "DS" = list(name = "Duststorm", type = "Storm", subtype = "", group = "Sand-/Duststorm"),
+  "FG" = list(name = "Fog", type = "Obscuration", subtype = "", group = "Fog"),
+  "SA" = list(name = "Sand", type = "Obscuration", subtype = "", group = "Sand/Ash/Dust"),
+  "BR" = list(name = "Mist", type = "Obscuration", subtype = "", group = "Mist/Haze"),
+  "FU" = list(name = "Smoke", type = "Obscuration", subtype = "", group = "Sand/Ash/Dust"),
+  "VA" = list(name = "Volcanic Ash", type = "Obscuration", subtype = "", group = "Sand/Ash/Dust"),
+  "DU" = list(name = "Dust", type = "Obscuration", subtype = "", group = "Sand/Ash/Dust"),
+  "HZ" = list(name = "Haze", type = "Obscuration", subtype = "", group = "Mist/Haze"),
+  "NSW" = list(name = "No Significant Weather", type = "Other", subtype = "", group = "NSW")
 )
 
 
@@ -87,6 +95,7 @@ metar.vars <- list(
   td = list(name = "Dew Point", type = "integer", drop = F),
   qnh_unit  = list(name = "QNH Unit", type = "character", drop = T, default = "Q"),
   qnh = list(name = "QNH", type = "integer", drop = F),
+  ws = list(name = "Wind Shear", type = "character", drop = F),
   recent = list(name = "Recent", type = "character", drop = F),
   trend_ind = list(name = "Trend Ind.", type = "character", drop = F),
   trend_str = list(name = "Trend", type = "character", drop = F),
@@ -100,7 +109,10 @@ metar.vars <- list(
 #' @export
 #'
 metar.vars.pw <- list(
+
+  # re = list(name = "Recent", type = "character", drop = F),
   int = list(name = "Intensity", type = "character", drop = F),
+  vc = list(name = "Vicinity", type = "character", drop = F),
   dc = list(name = "Descriptor", type = "character", drop = F),
   ph = list(name = "Phenomena", type = "character", drop = F)
 )
@@ -174,5 +186,11 @@ metar.test <- c(
   #BECMG
   "ZGGG 071800Z 06002MPS 340V120 7000 FEW023 SCT040 26/24 Q1009 BECMG AT1840 -TSRA SCT011 FEW026CB BKN030",
   #Cloud
-  "LSZH 250350Z VRB01KT 9000 -SHRA FEW007 BKN009 BKN022 02/00 Q1007"
+  "LSZH 250350Z VRB01KT 9000 -SHRA FEW007 BKN009 BKN022 02/00 Q1007",
+  # Recent
+  "LSZH 271750Z 14002KT CAVOK 25/18 Q1017 RERA",
+  # Mixed Precipitation
+  "LSZH 271750Z 14002KT CAVOK +SNRA 25/18 Q1017 ",
+  # Wind shear
+  "VHHH 110530Z 23009KT 9999 FEW018 33/24 Q1008 WS R25R NOSIG"
 )

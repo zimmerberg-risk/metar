@@ -5,7 +5,7 @@
 \alias{metar.test}
 \title{Lorem Ipsum}
 \format{
-An object of class \code{character} of length 18.
+An object of class \code{character} of length 21.
 }
 \usage{
 metar.test

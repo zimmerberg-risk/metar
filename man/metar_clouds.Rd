@@ -13,7 +13,7 @@ metar_clouds(cld)
 Parse a METAR cloud groups
 }
 \examples{
-metar_clouds(cld = "FEW030 FEW032TCU SCT050 BKN075")
+metar_clouds(cld = c("FEW030 FEW032TCU SCT050 BKN075", "SCT050 SCT075 OVC149", "", "SCT003"))
 
 }
 \author{

@@ -37,9 +37,10 @@ usethis:::use_data(
   metar.vars.cld,
   metar.vars.rvr,
   metar.test,
-  pw.desc,
+  pw.dc,
   pw.ph,
   metar.ph,
+  cld.amt,
   internal=FALSE, overwrite=TRUE
 )
 usethis::use_data_table()

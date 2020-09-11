@@ -14,6 +14,7 @@ Parse a METAR PW groups
 }
 \examples{
 metar_pw(pw = "+TSRA BR VCTS")
+metar_pw(pw = parse_metar(metar.test)$pw)
 
 }
 \author{
