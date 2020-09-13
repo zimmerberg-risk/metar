@@ -29,7 +29,12 @@ parse_metar <- function(x, date = NULL){
   wind <- str_match(metar,"([0-9VRB\\/]{3})?([0-9\\/]{2})G?([0-9]{2,3})?(KT|MPH|MPS)")[,-1] %>% rbind %>% as.data.table %>% stats::setNames( c("dir", "ff", "fx", "ff_unit"))
   wind.var <- str_match(metar, "\\b([0-9\\/]{3})V([0-9\\/]{3})\\b")[,-1] %>% rbind %>% as.data.table %>% stats::setNames(c("dir_from", "dir_to"))
 
-  vis <- str_match(metar, "\\b([0-9]{4}|[0-9\\/\\s]{1,5}(?=SM))(SM)?(NDV)?\\b")[,-1] %>% rbind %>% as.data.table %>% stats::setNames(c("vis", "vis_unit", "ndv"))
+  # str_match(c("1/4SM", "1 1/4SM", "3SM", "9999"), "\\b([0-9]{4}|[0-9]{1,2}\\s[0-9]{1}\\/[0-9]{1}(?=SM)|[0-9]{1}\\/[0-9]{1}(?=SM)|(?!<\\/)[0-9]{1,2}(?=SM))(SM)?(NDV)?\\b")
+  vis <- str_match(metar, "\\b([0-9]{4}|[0-9]{1,2}(?=KM)|[0-9]{1,2}\\s[0-9]{1}\\/[0-9]{1}(?=SM)|[0-9]{1}\\/[0-9]{1}(?=SM)|(?!<\\/)[0-9]{1,2}(?=SM))(SM|KM)?(NDV)?\\b")[,-1] %>% rbind %>% as.data.table %>% stats::setNames(c("vis", "vis_unit", "ndv"))
+  str_match("27010G20KT 9999 HZ SCT080 /// Q1015", "\\b([0-9]{4}|[0-9]{1,2}\\s[0-9]{1}\\/[0-9]{1}(?=SM)|[0-9]{1}\\/[0-9]{1}(?=SM)|(?!<\\/)[0-9]{1,2}(?=SM))(SM)?(NDV)?\\b")
+
+  #vis[, unique(vis)]
+
   min.vis <- str_match(metar, "\\s([0-9]{4})(N|NE|E|SE|S|SW|W|NW)\\s")[,-1] %>% rbind %>% as.data.table %>% stats::setNames(c("min_vis", "min_vis_dir"))
   rvr <-  str_match_all(metar, "(R([0-9\\/CRL]{2,3})\\/(P|P|M|\\/)?([0-9\\/]{4})(D|U|N)?V?(VP|P|M)?([0-9]{4})?(FT|D|U|N)?){1,4}") %>% sapply(., function(i) paste(i[,1], collapse = " "))
   vvis <- str_match(metar, "(?<=VV)([0-9|\\/]{3})")[,-1]  %>% cbind %>% as.data.table %>% stats::setNames("vvis")
@@ -57,7 +62,7 @@ parse_metar <- function(x, date = NULL){
   })
 
   wind.conversion = list(KT = 1, MPH = 1.1507767864273, MPS = 0.514444)
-  vis.conversion = list(KM = 1, M = 0.001, SM = 1.609344) # Statute miles
+  vis.conversion = list(KM = 1000, M = 1, SM = 1609.344) # Statute miles
   qnh.conversion = list(Q = 1, A = 1/2.953)
   tt.conversion = list(M = -1, P = 1)
 
@@ -70,7 +75,9 @@ parse_metar <- function(x, date = NULL){
 
   # Calculate
   dt[, `:=`(ff = ff*wind_factor, fx = fx*wind_factor, qnh = qnh*qnh_factor, tt = tt*tt_factor, td = td*td_factor,
-            vis = unlist(lapply(str_replace(vis, " ", "+0"), function(i) eval(parse(text = i))))*vis_factor)]
+            vis = unlist(lapply(str_replace(vis, "\\s", "\\+0*"), function(i) eval(parse(text = i))))*vis_factor)]
+
+  dt[, `:=`(vis = ifelse(`%in%`(wx, "CAVOK"), 9999, vis), cld = ifelse(`%in%`(wx, "NCD"), "NCD", cld))]
 
   # Drop auxiliary columns
   drop.col <-  c(names(metar.vars)[unname(sapply(metar.vars, '[[', "drop")) == F])
@@ -102,51 +109,60 @@ metar_pw <- function(pw){
   dt.res$id <- rep(seq_along(m), sapply(m, nrow))
   dt.res[, id_pw_grp := 1:.N, id]
   dt.res <- data.table::dcast(dt.res, id ~ id_pw_grp, value.var = c("pw_grp",  names(metar.vars.pw)))
-  setkey(dt.res, id)
 
   # Phenomena
-  m.ph <- str_match_all(dt.pw$pw, sprintf("((?<!VC)%s)", paste(pw.ph, collapse = ")|(?<!VC)(")))
-  dt.ph <- data.table(do.call(rbind, m.ph)[,-1, drop = FALSE])
-  dt.ph$id <- rep(seq_along(m.ph), sapply(m.ph, nrow))
-  dt.ph <- dt.ph[, lapply(.SD, function(i) 1*any(!is.na(i))), id]
-  setnames(dt.ph, c( "id", pw.ph))
-  setkey(dt.ph, id)
+  m.ph <- str_match(dt.pw$pw, sprintf("((?<!VC)%s)", paste(pw.ph, collapse = ")|(?<!VC)(")))
+  m.ph[!is.na(m.ph)] <- 1
+  m.ph[is.na(m.ph)] <- 0
+  class(m.ph) <- "integer"
+  dt.ph <- data.table(m.ph[,-1, drop = FALSE])
+  setnames(dt.ph, pw.ph)
 
   # VC Phenomena
-  m.ph.vc <- str_match_all(dt.pw$pw, sprintf("((?<=VC)%s)", paste(pw.ph, collapse = ")|(?<=VC)(")))
-  dt.ph.vc <- data.table(do.call(rbind, m.ph.vc)[,-1, drop = FALSE])
-  dt.ph.vc$id <- rep(seq_along(m.ph.vc), sapply(m.ph.vc, nrow))
-  dt.ph.vc <- dt.ph.vc[, lapply(.SD, function(i) 1*any(!is.na(i))), id]
-  setnames(dt.ph.vc, c("id", paste0("VC_", pw.ph)))
-  setkey(dt.ph.vc, id)
+  m.ph.vc <- str_match(dt.pw$pw, sprintf("((?<=VC)%s)", paste(pw.ph, collapse = ")|(?<=VC)(")))
+  m.ph.vc[!is.na(m.ph.vc)] <- 1
+  m.ph.vc[is.na(m.ph.vc)] <- 0
+  class(m.ph.vc) <- "integer"
+  dt.ph.vc <- data.table(m.ph.vc[,-1, drop = FALSE])
+  setnames(dt.ph.vc,  paste0("VC_", pw.ph))
 
   # Descriptor
-  m.dc <- str_match_all(dt.pw$pw, sprintf("((?<!VC)%s)", paste(pw.dc, collapse = ")|(?<!VC)(")))
-  dt.dc <- data.table(do.call(rbind, m.dc)[,-1, drop = FALSE])
-  dt.dc$id <- rep(seq_along(m.dc), sapply(m.dc, nrow))
-  dt.dc <- dt.dc[, lapply(.SD, function(i) 1*any(!is.na(i))), id]
-  setnames(dt.dc, c( "id", pw.dc))
+  m.dc <- str_match(dt.pw$pw, sprintf("((?<!VC)%s)", paste(pw.dc, collapse = ")|(?<!VC)(")))
+  m.dc[!is.na(m.dc)] <- 1
+  m.dc[is.na(m.dc)] <- 0
+  class(m.dc) <- "integer"
+  dt.dc <- data.table(m.dc[,-1, drop = FALSE])
+  setnames(dt.dc, pw.dc)
   setnames(dt.dc, c("SH", "TS"), c("dc_SH", "dc_TS"))
-  setkey(dt.dc, id)
+
+  # m.dc <- str_match_all()
+  # dt.dc <- data.table(do.call(rbind, m.dc)[,-1, drop = FALSE])
+  # dt.dc$id <- rep(seq_along(m.dc), sapply(m.dc, nrow))
+  # dt.dc <- dt.dc[, lapply(.SD, function(i) 1*any(!is.na(i))), id]
+  # setnames(dt.dc, c( "id", pw.dc))
+  # setnames(dt.dc, c("SH", "TS"), c("dc_SH", "dc_TS"))
+  # setkey(dt.dc, id)
 
   # Combine
-  dt.comb <- Reduce(function(...) merge(..., all = TRUE), list(dt.pw, dt.res, dt.ph, dt.ph.vc, dt.dc))
-  dt.comb
+  dt.comb <- cbind(dt.pw, dt.ph, dt.ph.vc, dt.dc)
+  dt.comb[, id := .I]
+  dt.comb <- merge(dt.res, dt.comb, by = "id", all.y = TRUE)
+
+  #dt.comb <- Reduce(function(...) merge(..., all = TRUE), list(dt.pw, dt.res, dt.ph, dt.ph.vc, dt.dc))
 
   # Derivatives
   dt.comb[, `:=`(is_pp = do.call(pmax,.SD)), .SDcols = dt.ph.lut[type == "Precipitation"]$ph]
   dt.comb[, `:=`(is_obsc = do.call(pmax,.SD)), .SDcols = dt.ph.lut[type == "Obscuration"]$ph]
   dt.comb[, `:=`(is_liquid = do.call(pmax,.SD)), .SDcols = dt.ph.lut[subtype == "Liquid"]$ph]
   dt.comb[, `:=`(is_solid = do.call(pmax,.SD)), .SDcols = dt.ph.lut[subtype == "Solid"]$ph]
-  dt.comb[, `:=`(int = str_match(pw, "\\+|\\-")[1,1])]
-
-  # Round-up
-  dt.comb[, `:=`(
-    is_mixed = (is_liquid & is_solid) * 1,
-    pp_int = dplyr::case_when(!is.na(int) ~ int, is_pp == TRUE ~ "0", TRUE ~ NA_character_ )
-  )]
-  #dt.comb <- Filter(function(x) !all(x == 0), dt.comb)   # Drop empty columns
+  dt.comb[, `:=`(int = str_extract(pw, "([\\+\\-])"))]
+  dt.comb[, `:=`(int = dplyr::case_when(int == "+" ~ 3, int == "-" ~ 1, TRUE ~ 2))]
+  dt.comb[, `:=`(is_mixed = (is_liquid * is_solid))]
   dt.comb[, `:=`(pw = NULL)][]
+  #dt.comb[, .N, int]
+
+  #dt.comb <- Filter(function(x) !all(x == 0), dt.comb)   # Drop empty columns
+  dt.comb
 }
 
 #' Parse a METAR cloud groups
@@ -291,15 +307,25 @@ read_station <- function(fi.name = ".+", fi.icao = ".+", fi.ctry = ".+", fi.lat 
 #' @export
 #' @description  metar_latest("LSZH")
 #'
-metar_latest <- function(id_icao = "KDEN", latest = TRUE){
+metar_latest <- function(id_icao = NULL, latest = TRUE){
   time.local <- Sys.time()
   attr(time.local, "tzone") <- "UTC"
   time.floor <- lubridate::floor_date(time.local, "1 hour")
   url.data <- sprintf("https://tgftp.nws.noaa.gov/data/observations/metar/cycles/%02dZ.TXT", hour(time.floor))
   dt.lines <- readr::read_lines(url.data)
-  dt.metar <- dt.lines[grepl("^([A-Z]{4}).+", dt.lines)]
-  reports <- dt.metar[grepl(sprintf("^(%s).+", paste(id_icao, collapse = "|")), dt.metar)]
-  n <- ifelse(latest, 1, length(reports))
-  unique(reports)[1:n]
+  reports <- dt.lines[grepl("^([A-Z]{4}).+", dt.lines)]
+  reports <- reports[grepl(sprintf("^(%s).+", paste(id_icao, collapse = "|")), reports)]
+
+  # Remove duplicates
+  key <- str_extract(reports,"^([A-Z]{4}\\s[0-9]{6}Z)")
+  reports <- reports[!duplicated(key)]
+
+  # Filter latest
+  if(latest){
+    id <- str_extract(reports,"^([A-Z]{4})")
+    ind <- tapply(seq_along(id), id, max)
+    reports <- reports[ind]
+  }
+  reports
 }
 

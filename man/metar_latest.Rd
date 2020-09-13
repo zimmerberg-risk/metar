@@ -4,7 +4,7 @@
 \alias{metar_latest}
 \title{Get METARs from NOAA cycle files}
 \usage{
-metar_latest(id_icao = "KDEN", latest = TRUE)
+metar_latest(id_icao = NULL, latest = TRUE)
 }
 \arguments{
 \item{id_icao}{Lorem Ipsum}

@@ -78,7 +78,7 @@ metar.vars <- list(
   dir_from = list(name = "Var. Wind From", type = "integer", drop = F),
   dir_to = list(name = "Var. Wind To", type = "integer", drop = F),
   vis = list(name = "Visibility", type = "character", drop = F),
-  vis_unit  = list(name = "Vis. Unit", type = "character", drop = T, default = "KM"),
+  vis_unit  = list(name = "Vis. Unit", type = "character", drop = T, default = "M"),
   ndv = list(name = "NVD", type = "character", drop = F),
   min_vis = list(name = "Min. Vis.", type = "integer", drop = F),
   min_vis_dir = list(name = "Min. Vis. Dir.", type = "character", drop = F),
