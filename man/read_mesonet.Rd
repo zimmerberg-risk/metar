@@ -6,8 +6,8 @@
 \usage{
 read_mesonet(
   id_icao = "HSSS",
-  date_start = date_end - 3600 * 12,
-  date_end = Sys.time(),
+  date_start = date_end - 3600 * 48,
+  date_end = Sys.time() + 3600 * 24,
   auto = TRUE,
   verbose = FALSE
 )

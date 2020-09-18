@@ -16,7 +16,7 @@ parse_metar <- function(x, date = NULL){
   if(is.null(date)){
     time <-  as.POSIXct(strptime(x = paste0(format(Sys.Date(), "%Y"), format(Sys.Date(), "%m"), str_extract(x, "([0-9]{6})(?=Z)")), format = "%Y%m%d%H%M", tz = "UTC"))
   } else {
-    time <- date
+    time <- as.POSIXct(format(date), tz = "UTC")
   }
 
   metar <- str_extract(x, "(?<=^[A-Z0-9]{4}\\s[0-9]{6}Z\\s)(.*?)(?=RMK|BECMG|TEMPO|$)")
@@ -41,7 +41,7 @@ parse_metar <- function(x, date = NULL){
 
   cld <- str_match_all(metar, "(FEW|SCT|BKN|OVC|[\\/]{3})([0-9]{3}|[\\/]{3})([A-Z]{2,3}|\\/\\/\\/)?") %>% sapply(., function(i) paste(i[,1], collapse = " "))
 
-  pw <- str_match_all(metar, sprintf("(\\+|\\-|VC|RE)?(%s)?((?:%s){1,3})", paste(pw.desc, collapse = "|"), paste(pw.ph, collapse = "|")))  %>% sapply(., function(i) paste(i[,1], collapse = " "))
+  pw <- str_match_all(metar, sprintf("(\\+|\\-|VC|RE)?(%s)?((?:%s){1,3})", paste(pw.dc, collapse = "|"), paste(pw.ph, collapse = "|")))  %>% sapply(., function(i) paste(i[,1], collapse = " "))
 
   tttd <- str_match(metar, "\\s(M)?([0-9]{2})/(M)?([0-9]{2})?\\s")[,-1]  %>% rbind %>% as.data.table %>% stats::setNames(c("tt_sign", "tt", "td_sign", "td"))
   qnh <- str_match(metar, "(Q|A)([0-9]{4})")[,-1]  %>% rbind %>% as.data.table %>% stats::setNames(c("qnh_unit", "qnh"))
@@ -79,6 +79,9 @@ parse_metar <- function(x, date = NULL){
 
   dt[, `:=`(vis = ifelse(`%in%`(wx, "CAVOK"), 9999, vis), cld = ifelse(`%in%`(wx, "NCD"), "NCD", cld))]
 
+  #  TZ
+  attr(dt$time, 'tzone') <- "UTC"
+
   # Drop auxiliary columns
   drop.col <-  c(names(metar.vars)[unname(sapply(metar.vars, '[[', "drop")) == F])
   dt[, .SD, .SDcols = intersect(names(dt), drop.col)]
@@ -104,7 +107,7 @@ metar_pw <- function(pw){
   dt.ph.lut <- rbindlist(metar.ph, idcol = "ph")[ph != "NSW"]
 
   # Summary
-  m <- str_match_all(dt.pw$pw, sprintf("(\\+|\\-)?(VC)?(%s)?((?:%s){1,3})", paste(pw.desc, collapse = "|"), paste(pw.ph, collapse = "|")))
+  m <- str_match_all(dt.pw$pw, sprintf("(\\+|\\-)?(VC)?(%s)?((?:%s){1,3})", paste(pw.dc, collapse = "|"), paste(pw.ph, collapse = "|")))
   dt.res <- data.table(do.call(rbind, m)) %>% data.table::setnames(c("pw_grp",  names(metar.vars.pw)))
   dt.res$id <- rep(seq_along(m), sapply(m, nrow))
   dt.res[, id_pw_grp := 1:.N, id]
@@ -240,7 +243,11 @@ metar_rvr <- function(rvr){
 #' @export
 #' @examples read_mesonet(id_icao = "KDEN", date_start = Sys.time() - 3600*24*1)
 #'
-read_mesonet <- function(id_icao = "HSSS", date_start = date_end - 3600*12, date_end = Sys.time(), auto = TRUE, verbose = FALSE){
+read_mesonet <- function(id_icao = "HSSS", date_start = date_end - 3600*48, date_end = Sys.time()+3600*24, auto = TRUE, verbose = FALSE){
+
+  # Convert TZ UTC
+  attr(date_start, 'tzone') <- "UTC"
+  attr(date_end, 'tzone') <- "UTC"
 
   def <- list(
     station = id_icao,
@@ -257,11 +264,18 @@ read_mesonet <- function(id_icao = "HSSS", date_start = date_end - 3600*12, date
   )
 
   url.1 <- "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?"
-  url.2 <- purrr::imap(def, ~paste0(.y, "=", .x)) %>% paste0(collapse = "&")
+  url.2 <- paste0(mapply(def, names(def), FUN = function(i, j) paste0(j, "=", i), SIMPLIFY = F), collapse = "&")
+
   url <- sprintf("%s%s&tz=UTC&latlon=no&trace=T&direct=no&report_type=1&report_type=2", url.1, url.2)
   if(verbose) print(url)
-  #data.table::fread(url, colClasses = c("character", "POSIXct", "character"))
-  readr::read_csv(url)
+
+  # Read
+  dt <- data.table::fread(url, colClasses = c("character", "character", "character"))
+
+  # Set TZ UTC
+  dt$valid <-  as.POSIXct(format(dt$valid), tz = "UTC")
+
+  dt
 }
 
 #' Get airport information from https://www.aviationweather.gov
@@ -282,7 +296,9 @@ read_station <- function(fi.name = ".+", fi.icao = ".+", fi.ctry = ".+", fi.lat 
   col.pos <- readr::fwf_positions(col.start, c(col.start[-1] - 1, NA), col_names = col.names)
 
   station.lines <- readr::read_lines(url.station, skip = 39)
-  station.lines <- station.lines[purrr::map_int(station.lines, nchar) > 80]
+  station.lines <- station.lines[sapply(station.lines, nchar) > 80]
+  #station.lines <- station.lines[purrr::map_int(station.lines, nchar) > 80]
+
   dt.station <- readr::read_fwf(station.lines, col_positions = col.pos)
 
   dt.station <- dt.station %>%
@@ -308,6 +324,7 @@ read_station <- function(fi.name = ".+", fi.icao = ".+", fi.ctry = ".+", fi.lat 
 #' @description  metar_latest("LSZH")
 #'
 metar_latest <- function(id_icao = NULL, latest = TRUE){
+
   time.local <- Sys.time()
   attr(time.local, "tzone") <- "UTC"
   time.floor <- lubridate::floor_date(time.local, "1 hour")

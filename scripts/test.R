@@ -3,12 +3,12 @@ library(data.table)
 library(tidyverse)
 library(rlang)
 
-metar::read_station(fi.lat = c(38, 41), fi.lon = c(-105, -103))
-metar::read_station(fi.name = "^San francisco")
+metar::read_station(fi.lat = c(30, 40), fi.lon = c(20, -103))
+metar::read_station(fi.name = "^Kefa")
 
 dt.in <- read_mesonet(id_icao = "LSZH", date_start = Sys.time() - 3600*24*3, date_end = Sys.time() + 3600*24) #"RKPK"
-dt.in <- read_mesonet(id_icao = "LSGG", date_start = as.POSIXct("2012-01-01", tz = "UTC"), date_end = Sys.time() + 3600*24) #"RKPK"
-dt.in <- metar_latest()
+dt.in <- read_mesonet(id_icao = "LGKF", date_start = as.POSIXct("2000-01-01", tz = "UTC"), date_end = Sys.time() + 3600*24) #"RKPK"
+dt.in <- metar_latest(id_icao = "LGKF")
 # dt.in <- read_csv("C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/Kunden/05 MeteoSchweiz/AutoMETAR/metar_LSZH_2000_2020.txt", guess_max = 1e5)
 # dt.in <- dt.in %>% filter(valid > "2017-01-01")
 

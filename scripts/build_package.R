@@ -46,9 +46,9 @@ usethis:::use_data(
 usethis::use_data_table()
 usethis::use_pipe()
 usethis::use_package("data.table")
-usethis::use_package("purrr")
 usethis::use_package("readr")
 usethis::use_package("stringr")
+usethis::use_package("lubridate")
 
 devtools::document()
 devtools::check()
@@ -57,4 +57,5 @@ p <- devtools::build()
 
 # https://github.com/m-saenger/metar
 devtools::install_local(p, force = TRUE, upgrade = "never")
+
 devtools::install_github("m-saenger/metar", upgrade = "never")
