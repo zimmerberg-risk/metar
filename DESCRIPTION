@@ -1,7 +1,7 @@
 Package: metar
 Type: Package
 Title: Parse METAR reports
-Version: 0.2.5
+Version: 0.2.6
 Authors@R: 
     person(given = "Matthias",
            family = "Sänger",

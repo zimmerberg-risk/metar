@@ -31,8 +31,7 @@ parse_metar <- function(x, date = NULL){
 
   # str_match(c("1/4SM", "1 1/4SM", "3SM", "9999"), "\\b([0-9]{4}|[0-9]{1,2}\\s[0-9]{1}\\/[0-9]{1}(?=SM)|[0-9]{1}\\/[0-9]{1}(?=SM)|(?!<\\/)[0-9]{1,2}(?=SM))(SM)?(NDV)?\\b")
   vis <- str_match(metar, "\\b([0-9]{4}|[0-9]{1,2}(?=KM)|[0-9]{1,2}\\s[0-9]{1}\\/[0-9]{1}(?=SM)|[0-9]{1}\\/[0-9]{1}(?=SM)|(?!<\\/)[0-9]{1,2}(?=SM))(SM|KM)?(NDV)?\\b")[,-1] %>% rbind %>% as.data.table %>% stats::setNames(c("vis", "vis_unit", "ndv"))
-  str_match("27010G20KT 9999 HZ SCT080 /// Q1015", "\\b([0-9]{4}|[0-9]{1,2}\\s[0-9]{1}\\/[0-9]{1}(?=SM)|[0-9]{1}\\/[0-9]{1}(?=SM)|(?!<\\/)[0-9]{1,2}(?=SM))(SM)?(NDV)?\\b")
-
+  #str_match("27010G20KT 9999 HZ SCT080 /// Q1015", "\\b([0-9]{4}|[0-9]{1,2}\\s[0-9]{1}\\/[0-9]{1}(?=SM)|[0-9]{1}\\/[0-9]{1}(?=SM)|(?!<\\/)[0-9]{1,2}(?=SM))(SM)?(NDV)?\\b")
   #vis[, unique(vis)]
 
   min.vis <- str_match(metar, "\\s([0-9]{4})(N|NE|E|SE|S|SW|W|NW)\\s")[,-1] %>% rbind %>% as.data.table %>% stats::setNames(c("min_vis", "min_vis_dir"))
@@ -53,11 +52,12 @@ parse_metar <- function(x, date = NULL){
 
   # Assign class and default value
   void <- lapply(intersect(names(dt), names(metar.vars)), function(i){
+    # i = "time"
     var.name <- i
     type <- metar.vars[[i]]$type
-    fct <- ifelse(type != "POSIXct", paste("as", metar.vars[[i]]$type, sep = "."), "c") # Protext POSIXct (as.POSIXct fails)
+    fct <- ifelse(type != "POSIXct", paste("as", metar.vars[[i]]$type, sep = "."), "c") # Protect POSIXct (as.POSIXct fails)
     default <- metar.vars[[var.name]]$default
-    dt[, (var.name) := lapply(.SD, fct), .SDcols = c(var.name)]
+    suppressWarnings(dt[, (var.name) := lapply(.SD, fct), .SDcols = c(var.name)])
     dt[is.na(dt[[var.name]]) & !is.null(default), (var.name) := default]
   })
 
@@ -77,7 +77,9 @@ parse_metar <- function(x, date = NULL){
   dt[, `:=`(ff = ff*wind_factor, fx = fx*wind_factor, qnh = qnh*qnh_factor, tt = tt*tt_factor, td = td*td_factor,
             vis = unlist(lapply(str_replace(vis, "\\s", "\\+0*"), function(i) eval(parse(text = i))))*vis_factor)]
 
-  dt[, `:=`(vis = ifelse(`%in%`(wx, "CAVOK"), 9999, vis), cld = ifelse(`%in%`(wx, "NCD"), "NCD", cld))]
+  dt[, `:=`(vis = data.table::fifelse(`%in%`(wx, "CAVOK"), 9999, vis))]
+  dt[, `:=`(cld = data.table::fifelse(`%in%`(wx, c("NCD", "NSC", "SKC")), wx, cld))]
+  dt[, `:=`(cld = data.table::fifelse(!`%in%`(vvis, NA), "IMC", cld))]
 
   #  TZ
   attr(dt$time, 'tzone') <- "UTC"
@@ -331,7 +333,9 @@ metar_latest <- function(id_icao = NULL, latest = TRUE){
   url.data <- sprintf("https://tgftp.nws.noaa.gov/data/observations/metar/cycles/%02dZ.TXT", hour(time.floor))
   dt.lines <- readr::read_lines(url.data)
   reports <- dt.lines[grepl("^([A-Z]{4}).+", dt.lines)]
-  reports <- reports[grepl(sprintf("^(%s).+", paste(id_icao, collapse = "|")), reports)]
+
+  id <- str_extract(reports,"^([A-Z]{4})") # extract id icao
+  reports <- reports[which(id %in% id_icao)] # Filter
 
   # Remove duplicates
   key <- str_extract(reports,"^([A-Z]{4}\\s[0-9]{6}Z)")
