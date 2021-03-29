@@ -1,0 +1,73 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# metar
+
+The goal of **metar** is to provide an R-built parser for METAR reports.
+
+## Installation
+
+And the development version from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("m-saenger/metar")
+```
+## Example
+
+### Data retrieval and parsing
+
+```{r example}
+library(metar)
+
+## read raw data from Mesonet website
+dat <- read_mesonet("LSZH", as.POSIXct("2021-03-26"), as.POSIXct("2021-03-28"))
+
+## parse METAR code
+dat.parsed <- parse_metar(dat$metar)
+
+# Structure
+str(dat.parsed)
+
+```
+
+### Example plot
+
+```{r plot1}
+library(ggplot2)
+ggplot(dat.parsed, aes(time, tt)) +
+  geom_path() +
+  labs(title = "Recent Temperature at LSZH Airport") +
+  theme_bw()
+
+```
+
+### Data processing (cloud groups)
+
+```{r plot2}
+# Process cloud groups (1-4)
+dat.cld <- metar_clouds(dat.parsed$cl)    
+dat.cld$time <- dat.parsed$time
+
+# Structure
+str(dat.cld)
+
+ggplot(dat.cld, aes(time, cld_hgt_1)) +
+  geom_path() +
+  labs(title = "Altitude of Lowest Cloud Level at LSZH Airport") +
+  theme_bw()
+
+```
+

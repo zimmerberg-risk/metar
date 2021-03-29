@@ -19,7 +19,7 @@ usethis::git_vaccinate()
 # usethis::use_github(private = T, credentials = git2r::cred_ssh_key(), auth_token = usethis::github_token())
 # edit_r_environ()
 
-use_readme_rmd()
+usethis::use_readme_rmd()
 
 # once
 use_r(package.name)
@@ -29,6 +29,12 @@ usethis::use_namespace(roxygen = TRUE)
 
 
 # before checks/install
+usethis::use_data_table()
+usethis::use_pipe()
+usethis::use_package("data.table")
+usethis::use_package("readr")
+usethis::use_package("stringr")
+usethis::use_package("lubridate")
 
 usethis:::use_data(
   #metar.groups,
@@ -43,13 +49,7 @@ usethis:::use_data(
   cld.amt,
   internal=FALSE, overwrite=TRUE
 )
-usethis::use_data_table()
-usethis::use_pipe()
-usethis::use_package("data.table")
-usethis::use_package("readr")
-usethis::use_package("stringr")
-usethis::use_package("lubridate")
-
+devtools::build_readme()
 devtools::document()
 devtools::check()
 
