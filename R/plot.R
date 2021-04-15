@@ -100,6 +100,7 @@ plot_metargram <- function(dat, cex = .9){
   # axis(4, at = t, labels = scales::rescale(t, to = range(dat$qnh, na.rm = TRUE)))
 
   # Vis
+
   dat.FG <- dat[FG==1]
   dat.LIQUID <- dat[is_liquid ==1]
   dat.SOLID <- dat[is_solid==1]
@@ -128,19 +129,19 @@ plot_metargram <- function(dat, cex = .9){
 
 }
 
+library(metar)
+#"PTRO" "PTYA"
+id.icao <- "LSZH"
+date.start <- as.POSIXct("2021-04-10")
+date.end <- as.POSIXct("2021-04-15")
+dat.metar <- read_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end)
+dat.parsed <- parse_metar(dat.metar$metar)
+dat.parsed$time <- dat.metar$valid
 
-# #"PTRO" "PTYA"
-# id.icao <- "LSZH"
-# date.start <- as.POSIXct("2021-03-16")
-# date.end <- as.POSIXct("2021-04-15")
-# dat.metar <- read_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end)
-# dat.parsed <- parse_metar(dat.metar$metar)
-# dat.parsed$time <- dat.metar$valid
-#
-# dat.1 <- cbind(dat.parsed, dat.parsed[, metar_pw(pw)])
-#
-# file.name <- file.path("C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/Data/metar", sprintf("%s_%s.png", id.icao, format(date.end, "%Y%m%d%H%M")))
-# png(file.name, width = 1920, height = 1080, units = "px", res = 96)
-# plot_metargram(dat = dat.1[(fx < 100) | is.na(fx)], cex = 1.2)
-# dev.off()
+dat.1 <- cbind(dat.parsed, dat.parsed[, metar_pw(pw)])
+
+file.name <- file.path("C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/Data/metar", sprintf("%s_%s.png", id.icao, format(date.end, "%Y%m%d%H%M")))
+png(file.name, width = 1920, height = 1080, units = "px", res = 96)
+plot_metargram(dat = dat.1[(fx < 100) | is.na(fx)], cex = 1.2)
+dev.off()
 

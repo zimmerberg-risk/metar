@@ -53,6 +53,7 @@ devtools::check()
 p <- devtools::build()
 detach("package:metar", unload = TRUE)
 devtools::install_local(p, force = TRUE, upgrade = "never")
+library(metar)
 
 # https://github.com/m-saenger/metar
 devtools::install_github("m-saenger/metar", upgrade = "never")
