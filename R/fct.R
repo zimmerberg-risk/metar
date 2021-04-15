@@ -11,6 +11,8 @@
 #'  parse_metar(x = metar.test)
 #'
 parse_metar <- function(x, date = NULL){
+  # x = "XXXX 271750Z AUTO VRB03G17KT 050V140 0200NDV R09R/0900N R27L/0750N +TSRA VCFG SCT009 BKN029 OVC045CB 25/18 Q1017 TEMPO FM1420 TL1450 5000 TSRA RMK AO2A CIG 015V027 BECMG AT1840 -TSRA SCT011 FEW026CB BKN030"
+  # x <- rep(x, 2)
 
   icao <- str_extract(x, "^[A-Z0-9]{4}")
 
@@ -20,36 +22,69 @@ parse_metar <- function(x, date = NULL){
     time <- as.POSIXct(format(date), tz = "UTC")
   }
 
-  metar <- str_extract(x, "(?<=^[A-Z0-9]{4}\\s[0-9]{6}Z\\s)(.*?)(?=RMK|BECMG|TEMPO|$)")
-  rmk <- str_extract(x, "(?<=RMK )(.*?)(?=BECMG|TEMPO|$)")
+  # Meta data
+  metar <- trimws(str_extract(x, "(?<=^[A-Z0-9]{4}\\s[0-9]{6}Z\\s)(.*?)(?=RMK|BECMG|TEMPO|$)"))
+  rmk <- trimws(str_extract(x, "(?<=RMK )(.*?)(?=BECMG|TEMPO|$)"))
   cor <- grepl("\\bCOR\\b", x)*1
   speci <- grepl("\\bSPECI\\b", x)*1
   auto <-  grepl("\\bAUTO\\b", x)*1
   wx <- str_extract(x, "(CAVOK|NSC|NCD|WXNIL|CLR|SKC|NSW)")
 
-  wind <- str_match(metar,"([0-9VRB\\/]{3})?([0-9\\/]{2})G?([0-9]{2,3})?(KT|MPH|MPS)")[,-1] %>% rbind %>% as.data.table %>% stats::setNames( c("dir", "ff", "fx", "ff_unit"))
-  wind.var <- str_match(metar, "\\b([0-9\\/]{3})V([0-9\\/]{3})\\b")[,-1] %>% rbind %>% as.data.table %>% stats::setNames(c("dir_from", "dir_to"))
+  # Wind
+  regex.wind <- "([0-9VRB\\/]{3})?([0-9\\/]{2})G?([0-9]{2,3})?(KT|MPH|MPS)"
+  wind <- rbind(str_match(metar, regex.wind)[,-1])
+  colnames(wind) <- c("dir", "ff", "fx", "ff_unit")
 
-  # str_match(c("1/4SM", "1 1/4SM", "3SM", "9999"), "\\b([0-9]{4}|[0-9]{1,2}\\s[0-9]{1}\\/[0-9]{1}(?=SM)|[0-9]{1}\\/[0-9]{1}(?=SM)|(?!<\\/)[0-9]{1,2}(?=SM))(SM)?(NDV)?\\b")
-  vis <- str_match(metar, "\\b([0-9]{4}|[0-9]{1,2}(?=KM)|[0-9]{1,2}\\s[0-9]{1}\\/[0-9]{1}(?=SM)|[0-9]{1}\\/[0-9]{1}(?=SM)|(?!<\\/)[0-9]{1,2}(?=SM))(SM|KM)?(NDV)?\\b")[,-1] %>% rbind %>% as.data.table %>% stats::setNames(c("vis", "vis_unit", "ndv"))
-  #str_match("27010G20KT 9999 HZ SCT080 /// Q1015", "\\b([0-9]{4}|[0-9]{1,2}\\s[0-9]{1}\\/[0-9]{1}(?=SM)|[0-9]{1}\\/[0-9]{1}(?=SM)|(?!<\\/)[0-9]{1,2}(?=SM))(SM)?(NDV)?\\b")
-  #vis[, unique(vis)]
+  regex.wind.var <- "\\b([0-9\\/]{3})V([0-9\\/]{3})\\b"
+  wind.var <- rbind(str_match(metar, regex.wind.var)[,-1])
+  colnames(wind.var) <- c("dir_from", "dir_to")
 
-  min.vis <- str_match(metar, "\\s([0-9]{4})(N|NE|E|SE|S|SW|W|NW)\\s")[,-1] %>% rbind %>% as.data.table %>% stats::setNames(c("min_vis", "min_vis_dir"))
-  rvr <-  str_match_all(metar, "(R([0-9\\/CRL]{2,3})\\/(P|P|M|\\/)?([0-9\\/]{4})(D|U|N)?V?(VP|P|M)?([0-9]{4})?(FT|D|U|N)?){1,4}") %>% sapply(., function(i) paste(i[,1], collapse = " "))
-  vvis <- str_match(metar, "(?<=VV)([0-9|\\/]{3})")[,-1]  %>% cbind %>% as.data.table %>% stats::setNames("vvis")
+  # Meteorological, vertical and runway visibility
+  regex.vis <- "\\b([0-9]{4}|[0-9]{1,2}(?=KM)|[0-9]{1,2}\\s[0-9]{1}\\/[0-9]{1}(?=SM)|[0-9]{1}\\/[0-9]{1}(?=SM)|(?!<\\/)[0-9]{1,2}(?=SM))(SM|KM)?(NDV)?\\b"
+  vis <- rbind(str_match(metar, regex.vis)[,-1])
+  colnames(vis) <- c("vis", "vis_unit", "ndv")
 
-  cld <- str_match_all(metar, "(FEW|SCT|BKN|OVC|[\\/]{3})([0-9]{3}|[\\/]{3})([A-Z]{2,3}|\\/\\/\\/)?") %>% sapply(., function(i) paste(i[,1], collapse = " "))
+  regex.vis.min <- "\\s([0-9]{4})(N|NE|E|SE|S|SW|W|NW)\\s"
+  vis.min <- rbind(str_match(metar, regex.vis.min)[,-1])
+  colnames(vis.min) <- c("min_vis", "min_vis_dir")
 
-  pw <- str_match_all(metar, sprintf("(\\+|\\-|VC|RE)?(%s)?((?:%s){1,3})", paste(pw.dc, collapse = "|"), paste(pw.ph, collapse = "|")))  %>% sapply(., function(i) paste(i[,1], collapse = " "))
+  #regex.rvr <- "(R([0-9\\/CRL]{2,3})\\/(P|P|M|\\/)?([0-9\\/]{4})(D|U|N)?V?(VP|P|M)?([0-9]{4})?(FT|D|U|N)?){1,4}"
+  regex.rvr <- "((R([0-9\\/CRL]{2,3})\\/(P|P|M|\\/)?([0-9\\/]{4})(D|U|N)?V?(VP|P|M)?([0-9]{4})?(FT|D|U|N)?){1,4})"
+  rvr <- cbind(sapply(str_extract_all(metar, regex.rvr), paste, collapse = " "))
+  colnames(rvr) <- c("rvr")
 
-  tttd <- str_match(metar, "\\s(M)?([0-9]{2})/(M)?([0-9]{2})?\\s")[,-1]  %>% rbind %>% as.data.table %>% stats::setNames(c("tt_sign", "tt", "td_sign", "td"))
-  qnh <- str_match(metar, "(Q|A)([0-9]{4})")[,-1]  %>% rbind %>% as.data.table %>% stats::setNames(c("qnh_unit", "qnh"))
+  regex.vvis <- "(?<=VV)([0-9|\\/]{3})"
+  vvis <- cbind(str_match(metar, regex.vvis)[,-1])
+  colnames(vvis) <- c("vvis")
 
-  ws <- str_match(metar, "(?<=WS\\s)(?:R[A-Z0-9]{2,3}|ALL RWY)(?=\\b)")[,1]
+  # Clouds
+  regex.cld <- "(FEW|SCT|BKN|OVC|[\\/]{3})([0-9]{3}|[\\/]{3})([A-Z]{2,3}|\\/\\/\\/)?"
+  cld <- cbind(sapply(str_extract_all(metar, regex.cld), paste, collapse = " "))
+  colnames(cld) <- c("cld")
 
-  dt <- cbind(icao, time, speci, auto, cor, wx, wind, wind.var, vis, min.vis, rvr, vvis, cld, tttd, pw, qnh, ws, metar, rmk) %>%
-    data.table::as.data.table()
+  # Present weather
+  regex.pw <- sprintf("(\\+|\\-|VC|RE)?(%s)?((?:%s){1,3})", paste(pw.dc, collapse = "|"), paste(pw.ph, collapse = "|"))
+  pw <- cbind(sapply(str_extract_all(metar, regex.pw), paste, collapse = " "))
+  colnames(pw) <- c("pw")
+
+  # Temperature/dew point
+  regex.tttd <- "\\s(M)?([0-9]{2})/(M)?([0-9]{2})?\\s"
+  tttd <- rbind(str_match(metar, regex.tttd)[,-1])
+  colnames(tttd) <-c("tt_sign", "tt", "td_sign", "td")
+
+  # Pressure
+  regex.qnh <- "(Q|A)([0-9]{4})"
+  qnh <- rbind(str_match(metar, regex.qnh)[,-1])
+  colnames(qnh) <- c("qnh_unit", "qnh")
+
+  # Wind shear
+  regex.ws <- "((?<=WS\\s)(?:R[A-Z0-9]{2,3}|ALL RWY)(?=\\b))"
+  ws <- cbind(str_match(metar, regex.ws)[,-1])
+  colnames(ws) <- c("ws")
+
+  # Combine
+  dt <- as.data.table(cbind(icao, time, speci, auto, cor, wx, wind, wind.var, vis, vis.min, rvr, vvis,
+    cld, tttd, pw, qnh, ws, metar, rmk))
 
   # Assign class and default value
   void <- lapply(intersect(names(dt), names(metar.vars)), function(i){
@@ -62,6 +97,7 @@ parse_metar <- function(x, date = NULL){
     dt[is.na(dt[[var.name]]) & !is.null(default), (var.name) := default]
   })
 
+  # Convert units
   wind.conversion <- list(KT = 1, MPH = 1.1507767864273, MPS = 0.514444)
   vis.conversion <- list(KM = 1000, M = 1, SM = 1609.344) # Statute miles
   qnh.conversion <- list(Q = 1, A = 1/2.953)
@@ -77,19 +113,22 @@ parse_metar <- function(x, date = NULL){
   # Calculate
   dt[, `:=`(ff = ff*wind_factor, fx = fx*wind_factor, qnh = qnh*qnh_factor, tt = tt*tt_factor, td = td*td_factor,
             vis = unlist(lapply(str_replace(vis, "\\s", "\\+0*"), function(i) eval(parse(text = i))))*vis_factor)]
-
   dt[, `:=`(vis = data.table::fifelse(`%in%`(wx, "CAVOK"), 9999, vis))]
   dt[, `:=`(cld = data.table::fifelse(`%in%`(wx, c("NCD", "NSC", "SKC")), wx, cld))]
   dt[, `:=`(cld = data.table::fifelse(!`%in%`(vvis, NA), "IMC", cld))]
 
-  #  TZ
+  # Set time zone to UTC
   attr(dt$time, 'tzone') <- "UTC"
 
-  # Drop auxiliary columns
+  # Drop auxiliary data columns
   drop.col <-  c(names(metar.vars)[unname(sapply(metar.vars, '[[', "drop")) == F])
   dt[, .SD, .SDcols = intersect(names(dt), drop.col)]
+  dt
 
 }
+# x <- metar_latest(id_icao = "")
+# dat <- parse_metar(x)
+# dat[order(-fx)]
 
 #' Parse a METAR PW groups
 #'

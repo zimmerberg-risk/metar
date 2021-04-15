@@ -33,6 +33,7 @@ usethis::use_data_table()
 usethis::use_pipe()
 usethis::use_package("data.table")
 
+
 devtools::load_all()
 usethis:::use_data(
   metar.vars,

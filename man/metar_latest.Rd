@@ -12,7 +12,8 @@ metar_latest(id_icao = NULL, latest = TRUE)
 \item{latest}{Lorem Ipsum}
 }
 \description{
-metar_latest("LSZH")
+metar_latest(id_icao = "LSZH")
+metar_latest(id_icao = "EG")
 }
 \author{
 M. Saenger

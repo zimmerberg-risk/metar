@@ -90,7 +90,9 @@ read_station <- function(fi.name = ".+", fi.icao = ".+", fi.ctry = ".+", fi.lat 
 #' @param id_icao Lorem Ipsum
 #' @param latest Lorem Ipsum
 #' @export
-#' @description  metar_latest("LSZH")
+#' @description
+#' metar_latest(id_icao = "LSZH")
+#' metar_latest(id_icao = "EG")
 #'
 metar_latest <- function(id_icao = NULL, latest = TRUE){
 
@@ -102,7 +104,8 @@ metar_latest <- function(id_icao = NULL, latest = TRUE){
   reports <- dt.lines[grepl("^([A-Z]{4}).+", dt.lines)]
 
   id <- str_extract(reports,"^([A-Z]{4})") # extract id icao
-  reports <- reports[which(id %in% id_icao)] # Filter
+  #reports <- reports[which(id %in% id_icao)] # Filter
+  reports <- reports[grepl(sprintf("^%s", id_icao), id)] # Filter
 
   # Remove duplicates
   key <- str_extract(reports,"^([A-Z]{4}\\s[0-9]{6}Z)")
