@@ -1,30 +1,41 @@
-
-#' @name cld.amt
-#' @title Lorem Ipsum
+#' METAR Data Sources
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
 #'
-cld.amt = c("NSC", "FEW", "SCT", "BKN", "OVC")
+metar.src <- list(
+  mesonet = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py",
+  stn = "https://www.aviationweather.gov/docs/metar/stations.txt",
+  noaa = "https://tgftp.nws.noaa.gov/data/observations/metar/cycles/%02dZ.TXT"
+)
 
-#' @name pw.dc
-#' @title Lorem Ipsum
+#' Cloud Amount
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
 #'
-pw.dc = c("MI", "BC", "PR", "DR", "BL", "SH", "TS", "FZ")
+cld.amt  <- c("NSC", "FEW", "SCT", "BKN", "OVC")
 
-#' @name pw.ph
-#' @title Lorem Ipsum
+#' Present Weather Descriptor
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
 #'
-pw.ph = c("DZ", "RA", "SN", "SG", "PL", "GR", "GS", "UP", "FG", "BR", "FU", "VA", "DU", "SA", "HZ", "PO", "SQ", "FC", "SS", "DS", "NSW", "TS", "SH")
+pw.dc <- c("MI", "BC", "PR", "DR", "BL", "SH", "TS", "FZ")
 
-#' @name metar.ph
-#' @title Lorem Ipsum
+#' Present Weather Phenomena
+#'
+#' @docType data
+#' @keywords dataset
+#' @export
+#'
+pw.ph  <-  c("DZ", "RA", "SN", "SG", "PL", "GR", "GS", "UP", "FG", "BR", "FU", "VA", "DU", "SA", "HZ", "PO", "SQ", "FC", "SS", "DS", "NSW", "TS", "SH")
+
+#' Present Weather Phenomena
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
@@ -56,8 +67,8 @@ metar.ph <- list(
 )
 
 
-#' @name metar.vars
-#' @title Lorem Ipsum
+#' METAR Output Variables
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
@@ -102,8 +113,8 @@ metar.vars <- list(
   rmk = list(name = "Remark", type = "character", drop = F)
 )
 
-#' @name metar.vars.pw
-#' @title Lorem Ipsum
+#' Present Weather Output Variables
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
@@ -117,8 +128,8 @@ metar.vars.pw <- list(
   ph = list(name = "Phenomena", type = "character", drop = F)
 )
 
-#' @name metar.vars.cld
-#' @title Lorem Ipsum
+#' Cloud Output Variables
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
@@ -130,8 +141,8 @@ metar.vars.cld <- list(
   cld_type = list(name = "Cloud Type", type = "character", drop = F)
 )
 
-#' @name metar.vars.rvr
-#' @title Lorem Ipsum
+#' RVR Output Variables
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
@@ -146,8 +157,8 @@ metar.vars.rvr <- list(
   rvr_unit = list(name = "RVR Unit", type = "character", drop = F)
 )
 
-#' @name metar.test
-#' @title Lorem Ipsum
+#' METAR Test Data Set
+#'
 #' @docType data
 #' @keywords dataset
 #' @export

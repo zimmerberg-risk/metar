@@ -32,12 +32,9 @@ usethis::use_namespace(roxygen = TRUE)
 usethis::use_data_table()
 usethis::use_pipe()
 usethis::use_package("data.table")
-usethis::use_package("readr")
-usethis::use_package("stringr")
-usethis::use_package("lubridate")
 
+devtools::load_all()
 usethis:::use_data(
-  #metar.groups,
   metar.vars,
   metar.vars.pw,
   metar.vars.cld,
@@ -54,8 +51,8 @@ devtools::document()
 devtools::check()
 
 p <- devtools::build()
-
-# https://github.com/m-saenger/metar
+detach("package:metar", unload = TRUE)
 devtools::install_local(p, force = TRUE, upgrade = "never")
 
+# https://github.com/m-saenger/metar
 devtools::install_github("m-saenger/metar", upgrade = "never")

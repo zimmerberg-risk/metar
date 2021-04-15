@@ -1,5 +1,5 @@
 #usethis::edit_r_environ()
-#devtools::install_github("m-saenger/metar", auth_token = devtools::github_pat())
+# devtools::install_github("m-saenger/metar", auth_token = devtools::github_pat())
 
 library(metar)
 library(data.table)
