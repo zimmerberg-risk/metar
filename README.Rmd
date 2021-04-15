@@ -22,7 +22,7 @@ The goal of **metar** is to provide an R-built parser for METAR reports.
 And the development version from [GitHub](https://github.com/) with:
 
 ``` r
-# install.packages("devtools")
+# install.packages("devtools") 
 devtools::install_github("m-saenger/metar")
 ```
 ## Example
