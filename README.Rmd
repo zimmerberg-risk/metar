@@ -35,9 +35,9 @@ devtools::install_github("m-saenger/metar")
 ```{r example}
 library(metar)
 ## read raw data from Mesonet website
-dat <- read_mesonet("LSZH", as.POSIXct("2021-03-06"), as.POSIXct("2021-03-28"))
+dat <- read_mesonet(id_icao = "LSZH", date_start = "2021-03-06", date_end = "2021-03-28")
 ## parse METAR code
-dat.parsed <- parse_metar(dat$metar)
+dat.parsed <- parse_metar(x = dat$metar, date = dat$valid)
 # Structure
 str(dat.parsed)
 ```
@@ -71,7 +71,6 @@ ggplot(dat.cld, aes(time, cld_hgt_1)) +
 ```{r plot3}
 
 dat.1 <- cbind(dat.parsed, dat.parsed[, metar_pw(pw)])
-print(dat.1$FG)
 plot_metargram(dat = dat.1, cex = .8)
 
 ```

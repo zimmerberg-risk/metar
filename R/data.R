@@ -7,16 +7,14 @@
 #' @param date_end Lorem Ipsum
 #' @param auto Lorem Ipsum
 #' @param verbose Lorem Ipsum
-#' @import curl
 #' @export
 #' @examples
 #' read_mesonet(id_icao = "KDEN", date_start = Sys.time() - 3600*24*1)
 #'
 read_mesonet <- function(id_icao = "LSZH", date_start = date_end - 3600*24*7, date_end = Sys.time()+3600*24, auto = TRUE, verbose = FALSE){
 
-  # Convert TZ UTC
-  attr(date_start, 'tzone') <- "UTC"
-  attr(date_end, 'tzone') <- "UTC"
+  date_start <- as.POSIXct(as.character(date_start), tz = "UTC")
+  date_end <- as.POSIXct(as.character(date_end), tz = "UTC")
 
   def <- list(
     station = id_icao,
@@ -56,7 +54,13 @@ read_mesonet <- function(id_icao = "LSZH", date_start = date_end - 3600*24*7, da
 #' @param fi.lat Lorem Ipsum
 #' @param fi.lon Lorem Ipsum
 #' @export
-#' @examples read_station(fi.icao = "^L", fi.lon = c(5, 11), fi.lat = c(46, 49))
+#' @examples
+#' # Central Europe
+#' read_station(fi.icao = "^L", fi.lon = c(5, 11), fi.lat = c(46, 49))
+#' # South America (Argentina)
+#' read_station(fi.icao = "^SA")
+#' # Contry filter (New Zealand)
+#' read_station(fi.ctry = "NZ")
 #'
 read_station <- function(fi.name = ".+", fi.icao = ".+", fi.ctry = ".+", fi.lat = c(-90, 90), fi.lon = c(-180, 180)){
   url.station <- "https://www.aviationweather.gov/docs/metar/stations.txt"
@@ -66,22 +70,25 @@ read_station <- function(fi.name = ".+", fi.icao = ".+", fi.ctry = ".+", fi.lat 
 
   station.lines <- readr::read_lines(url.station, skip = 39)
   station.lines <- station.lines[sapply(station.lines, nchar) > 80]
-  #station.lines <- station.lines[purrr::map_int(station.lines, nchar) > 80]
 
-  dt.station <- readr::read_fwf(station.lines, col_positions = col.pos)
+  dt.station <- as.data.table(readr::read_fwf(station.lines, col_positions = col.pos))
 
-  dt.station <- dt.station %>%
-    tidyr::separate(lat_min, c("lat_num", "ns"), sep = -1, remove = F) %>%
-    tidyr::separate(lon_min, c("lon_num", "we"), sep = -1, remove = F) %>%
-    dplyr::mutate(
-      x = dplyr::case_when(we == "E" ~ as.numeric(lon_deg) + as.numeric(lon_num)/60, TRUE ~ - (as.numeric(lon_deg) + as.numeric(lon_num)/60)),
-      y = dplyr::case_when(ns == "N" ~ as.numeric(lat_deg) + as.numeric(lat_num)/60, TRUE ~ - (as.numeric(lat_deg) + as.numeric(lat_num)/60))
-    ) %>%
-    dplyr::select(ctry, name, icao, synop, iata, x, y, z) %>%
-    as.data.table
+  # Process lon/lat minutes
+  dt.station[, c("lat_num", "ns") := as.data.frame(str_match(lat_min, "([0-9]+)(N|S)")[,2:3]) ]
+  dt.station[, c("lon_num", "we") := as.data.frame(str_match(lon_min, "([0-9]+)(W|E)")[,2:3]) ]
+  dt.station[, `:=`(
+    x = fifelse(we == "E", as.numeric(lon_deg) + as.numeric(lon_num)/60, -(as.numeric(lon_deg) + as.numeric(lon_num)/60)),
+    y = fifelse(ns == "N", as.numeric(lat_deg) + as.numeric(lat_num)/60, -(as.numeric(lat_deg) + as.numeric(lat_num)/60))
+  )]
+  dt.station <- dt.station[, .(ctry, name, icao, synop, iata, x, y, z)]
 
-  dt.station[grepl(fi.name, name, ignore.case = TRUE) & grepl(fi.ctry, ctry, ignore.case = TRUE) & grepl(fi.icao, icao, ignore.case = TRUE) &
-               between(x, fi.lon[1], fi.lon[2]) & between(y, fi.lat[1], fi.lat[2])]
+  # Filter
+  dt.station[grepl(fi.name, name, ignore.case = TRUE) &
+               grepl(fi.ctry, ctry, ignore.case = TRUE) &
+               grepl(fi.icao, icao, ignore.case = TRUE) &
+               between(x, fi.lon[1], fi.lon[2]) &
+               between(y, fi.lat[1], fi.lat[2]
+  )]
 }
 
 #' Get METARs from NOAA cycle files

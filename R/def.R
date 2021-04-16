@@ -120,7 +120,6 @@ metar.vars <- list(
 #' @export
 #'
 metar.vars.pw <- list(
-
   # re = list(name = "Recent", type = "character", drop = F),
   int = list(name = "Intensity", type = "character", drop = F),
   vc = list(name = "Vicinity", type = "character", drop = F),

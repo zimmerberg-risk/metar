@@ -4,7 +4,6 @@
 #' @description Parse a METAR report
 #' @param x METAR strings
 #' @param date date
-#' @import stringr
 #' @export
 #' @examples
 #'  parse_metar(x = "LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG")
@@ -96,6 +95,7 @@ parse_metar <- function(x, date = NULL){
     suppressWarnings(dt[, (var.name) := lapply(.SD, fct), .SDcols = c(var.name)])
     dt[is.na(dt[[var.name]]) & !is.null(default), (var.name) := default]
   })
+  dt[, time := as.POSIXct(as.integer(time), origin = "1970-01-01", tz = "UTC")]
 
   # Convert units
   wind.conversion <- list(KT = 1, MPH = 1.1507767864273, MPS = 0.514444)
@@ -116,9 +116,6 @@ parse_metar <- function(x, date = NULL){
   dt[, `:=`(vis = data.table::fifelse(`%in%`(wx, "CAVOK"), 9999, vis))]
   dt[, `:=`(cld = data.table::fifelse(`%in%`(wx, c("NCD", "NSC", "SKC")), wx, cld))]
   dt[, `:=`(cld = data.table::fifelse(!`%in%`(vvis, NA), "IMC", cld))]
-
-  # Set time zone to UTC
-  attr(dt$time, 'tzone') <- "UTC"
 
   # Drop auxiliary data columns
   drop.col <-  c(names(metar.vars)[unname(sapply(metar.vars, '[[', "drop")) == F])
@@ -154,10 +151,6 @@ metar_pw <- function(pw){
   dt.res <- data.table(id = 1:length(m))
   dt.res <- rbindlist(lapply(m, as.data.frame), idcol = "id")[dt.res, on = "id"]
   setnames(dt.res, new = c("id", "pw_grp",  names(metar.vars.pw)))
-
-
-  #dt.res <- data.table(do.call(rbind, m)) %>% data.table::setnames(c("pw_grp",  names(metar.vars.pw)))
-  #dt.res$id <- rep(seq_along(m), sapply(m, nrow))
 
   dt.res[, id_pw_grp := 1:.N, id]
   dt.res <- data.table::dcast(dt.res, id ~ id_pw_grp, value.var = c("pw_grp",  names(metar.vars.pw)))
@@ -208,7 +201,7 @@ metar_pw <- function(pw){
   dt.comb[, `:=`(is_liquid = do.call(pmax,.SD)), .SDcols = dt.ph.lut[subtype == "Liquid"]$ph]
   dt.comb[, `:=`(is_solid = do.call(pmax,.SD)), .SDcols = dt.ph.lut[subtype == "Solid"]$ph]
   dt.comb[, `:=`(int = str_extract(pw, "([\\+\\-])"))]
-  dt.comb[, `:=`(int = dplyr::case_when(int == "+" ~ 3, int == "-" ~ 1, TRUE ~ 2))]
+  dt.comb[, `:=`(int = fifelse(int == "+", 3, fifelse(int == "-", 1, 2)))]
   dt.comb[, `:=`(is_mixed = (is_liquid * is_solid))]
   dt.comb[, `:=`(pw = NULL)][]
   #dt.comb[, .N, int]
@@ -278,5 +271,68 @@ metar_rvr <- function(rvr){
     dt.rvr[, (i) := lapply(.SD, fct), .SDcols = c(i)]
   })
   data.table::dcast(dt.rvr[], id ~ rvr_group, value.var = names(metar.vars.rvr))
+}
+
+# --------------------------------------------------- Formulas --------------------------------------------
+
+
+#' Vapour pressure saturated (wrapper function)
+#'
+#' @author M. Saenger
+#' @description Vapour pressure saturated (wrapper function)
+#' ECMWF IFS Documentation – Cy41r2, Part IV, formula 7.5
+#' @param tt °C
+#' @param ice true/false
+#' @export
+#' @examples wx_es(30, TRUE)
+#'
+wx_es <- function(tt, ice = FALSE){
+  if(ice){
+    wx_es_i(tt)
+  } else {
+    wx_es_w(tt)
+  }
+}
+
+#' Vapour pressure saturated (over water)
+#'
+#' @author M. Saenger
+#' @description ECMWF IFS Documentation – Cy41r2, Part IV, formula 7.5
+#' @param tt °C
+#' @export
+#' @examples wx_es_w(30)
+#'
+wx_es_w <- function(tt){
+  tt <- tt + 273.16
+  es <- 611.21 * exp(17.502 * ((tt - 273.16)/(tt + 32.19)))
+  es / 100
+}
+
+#' Vapour pressure saturated (over ice)
+#'
+#' @author M. Saenger
+#' @description ECMWF IFS Documentation – Cy41r2, Part IV, formula 7.5
+#' @param tt °C
+#' @export
+#' @examples wx_es_i(-30)
+#'
+wx_es_i <- function(tt){
+  tt <- tt + 273.16
+  es <- 611.21 * exp(22.587 * ((tt - 273.16)/(tt - 0.7)))
+  es / 100
+}
+
+#' Relative humidity
+#'
+#' @author M. Saenger
+#' @param tt °C Air temperature
+#' @param td °C Dew point
+#' @param ice over ice
+#' @export
+#' @examples
+#' wx_rh(5, -35)
+#'
+wx_rh <- function(tt, td, ice = FALSE){
+  100 * wx_es(td, ice)/wx_es(tt, ice)
 }
 

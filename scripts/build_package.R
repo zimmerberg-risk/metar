@@ -24,14 +24,12 @@ usethis::use_readme_rmd()
 # once
 use_r(package.name)
 use_test(package.name)
-usethis::use_ccby_license(name = "Zimmerberg Risk Analytics GmbH")
+usethis::use_ccby_license()
 usethis::use_namespace(roxygen = TRUE)
 
 
 # before checks/install
 usethis::use_data_table()
-usethis::use_pipe()
-usethis::use_package("data.table")
 
 
 devtools::load_all()
@@ -47,9 +45,9 @@ usethis:::use_data(
   cld.amt,
   internal=FALSE, overwrite=TRUE
 )
-devtools::build_readme()
 devtools::document()
 devtools::check()
+# devtools::build_readme()
 
 p <- devtools::build()
 detach("package:metar", unload = TRUE)
