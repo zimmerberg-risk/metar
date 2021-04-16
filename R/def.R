@@ -1,30 +1,41 @@
-
-#' @name cld.amt
-#' @title Lorem Ipsum
+#' METAR Data Sources
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
 #'
-cld.amt = c("NSC", "FEW", "SCT", "BKN", "OVC")
+metar.src <- list(
+  mesonet = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py",
+  stn = "https://www.aviationweather.gov/docs/metar/stations.txt",
+  noaa = "https://tgftp.nws.noaa.gov/data/observations/metar/cycles/%02dZ.TXT"
+)
 
-#' @name pw.dc
-#' @title Lorem Ipsum
+#' Cloud Amount
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
 #'
-pw.dc = c("MI", "BC", "PR", "DR", "BL", "SH", "TS", "FZ")
+cld.amt  <- c("NSC", "FEW", "SCT", "BKN", "OVC")
 
-#' @name pw.ph
-#' @title Lorem Ipsum
+#' Present Weather Descriptor
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
 #'
-pw.ph = c("DZ", "RA", "SN", "SG", "PL", "GR", "GS", "UP", "FG", "BR", "FU", "VA", "DU", "SA", "HZ", "PO", "SQ", "FC", "SS", "DS", "NSW", "TS", "SH")
+pw.dc <- c("MI", "BC", "PR", "DR", "BL", "SH", "TS", "FZ")
 
-#' @name metar.ph
-#' @title Lorem Ipsum
+#' Present Weather Phenomena
+#'
+#' @docType data
+#' @keywords dataset
+#' @export
+#'
+pw.ph  <-  c("DZ", "RA", "SN", "SG", "PL", "GR", "GS", "UP", "FG", "BR", "FU", "VA", "DU", "SA", "HZ", "PO", "SQ", "FC", "SS", "DS", "NSW", "TS", "SH")
+
+#' Present Weather Phenomena
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
@@ -56,8 +67,8 @@ metar.ph <- list(
 )
 
 
-#' @name metar.vars
-#' @title Lorem Ipsum
+#' METAR Output Variables
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
@@ -102,14 +113,13 @@ metar.vars <- list(
   rmk = list(name = "Remark", type = "character", drop = F)
 )
 
-#' @name metar.vars.pw
-#' @title Lorem Ipsum
+#' Present Weather Output Variables
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
 #'
 metar.vars.pw <- list(
-
   # re = list(name = "Recent", type = "character", drop = F),
   int = list(name = "Intensity", type = "character", drop = F),
   vc = list(name = "Vicinity", type = "character", drop = F),
@@ -117,8 +127,8 @@ metar.vars.pw <- list(
   ph = list(name = "Phenomena", type = "character", drop = F)
 )
 
-#' @name metar.vars.cld
-#' @title Lorem Ipsum
+#' Cloud Output Variables
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
@@ -130,8 +140,8 @@ metar.vars.cld <- list(
   cld_type = list(name = "Cloud Type", type = "character", drop = F)
 )
 
-#' @name metar.vars.rvr
-#' @title Lorem Ipsum
+#' RVR Output Variables
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
@@ -146,8 +156,8 @@ metar.vars.rvr <- list(
   rvr_unit = list(name = "RVR Unit", type = "character", drop = F)
 )
 
-#' @name metar.test
-#' @title Lorem Ipsum
+#' METAR Test Data Set
+#'
 #' @docType data
 #' @keywords dataset
 #' @export
@@ -180,7 +190,7 @@ metar.test <- c(
   # CAVOK
   "LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG",
   # All combined (fictional)
-  "XXXX 271750Z AUTO VRB03G17KT 050V140 0200NDV R09R/0900N R27L/0750N +TSRA VCFG SCT009 BKN029 OVC045CB 25/18 Q1017 TEMPO FM1420 TL1450 5000 TSRA",
+  "XXXX 271750Z AUTO VRB03G17KT 050V140 0200NDV R09R/0900N R27L/0750N +TSRA VCFG SCT009 BKN029 OVC045CB 25/18 Q1017 TEMPO FM1420 TL1450 5000 TSRA RMK AO2A CIG 015V027 BECMG AT1840 -TSRA SCT011 FEW026CB BKN030",
   # Complex
   "LSZH 250350Z 32003KT 290V350 2000 R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U BCFG FEW001 SCT003 BKN140 16/16 Q1016 TEMPO BKN003",
   #BECMG

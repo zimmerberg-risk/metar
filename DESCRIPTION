@@ -1,27 +1,23 @@
 Package: metar
 Type: Package
 Title: Parse METAR reports
-Version: 0.2.6
+Version: 0.3.1
 Authors@R: 
     person(given = "Matthias",
            family = "Sänger",
            role = c("aut", "cre"),
            email = "ms@zimmerberg-risk.ch")
-Description: Parse METAR reports
-License: -
+Description: Parse and process METAR reports.
+License: CC BY 4.0
 Encoding: UTF-8
 LazyData: true
 Depends:
     R (>= 2.15)
 Imports:
     data.table,
-    magrittr,
-    rlang,
     stringr,
     lubridate,
-    dplyr,
     readr,
-    tidyr,
     curl
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1

@@ -24,20 +24,16 @@ usethis::use_readme_rmd()
 # once
 use_r(package.name)
 use_test(package.name)
-usethis::use_ccby_license(name = "Zimmerberg Risk Analytics GmbH")
+usethis::use_ccby_license()
 usethis::use_namespace(roxygen = TRUE)
 
 
 # before checks/install
 usethis::use_data_table()
-usethis::use_pipe()
-usethis::use_package("data.table")
-usethis::use_package("readr")
-usethis::use_package("stringr")
-usethis::use_package("lubridate")
 
+
+devtools::load_all()
 usethis:::use_data(
-  #metar.groups,
   metar.vars,
   metar.vars.pw,
   metar.vars.cld,
@@ -49,13 +45,14 @@ usethis:::use_data(
   cld.amt,
   internal=FALSE, overwrite=TRUE
 )
-devtools::build_readme()
 devtools::document()
 devtools::check()
+# devtools::build_readme()
 
 p <- devtools::build()
+detach("package:metar", unload = TRUE)
+devtools::install_local(p, force = TRUE, upgrade = "never")
+library(metar)
 
 # https://github.com/m-saenger/metar
-devtools::install_local(p, force = TRUE, upgrade = "never")
-
 devtools::install_github("m-saenger/metar", upgrade = "never")
