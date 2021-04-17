@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct.R
 \name{parse_metar}
 \alias{parse_metar}
-\title{Parse a METAR report}
+\title{Parse METAR reports}
 \usage{
 parse_metar(x, date = NULL)
 }

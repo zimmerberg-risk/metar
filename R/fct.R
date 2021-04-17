@@ -1,4 +1,4 @@
-#' Parse a METAR report
+#' Parse METAR reports
 #'
 #' @author M. Saenger
 #' @description Parse a METAR report
@@ -10,10 +10,13 @@
 #'  parse_metar(x = metar.test)
 #'
 parse_metar <- function(x, date = NULL){
-  # x = "XXXX 271750Z AUTO VRB03G17KT 050V140 0200NDV R09R/0900N R27L/0750N +TSRA VCFG SCT009 BKN029 OVC045CB 25/18 Q1017 TEMPO FM1420 TL1450 5000 TSRA RMK AO2A CIG 015V027 BECMG AT1840 -TSRA SCT011 FEW026CB BKN030"
-  # x <- rep(x, 2)
 
-  icao <- str_extract(x, "^[A-Z0-9]{4}")
+  if(length(x) == 0){
+    warning("No data found - returning empty data table")
+    return(data.table())
+  }
+
+  icao <- str_extract(x, "(?<=COR|METAR|\\s|^)\\b([A-Z0-9]{4})\\b")
 
   if(is.null(date)){
     time <-  as.POSIXct(strptime(x = paste0(format(Sys.Date(), "%Y"), format(Sys.Date(), "%m"), str_extract(x, "([0-9]{6})(?=Z)")), format = "%Y%m%d%H%M", tz = "UTC"))
@@ -87,7 +90,6 @@ parse_metar <- function(x, date = NULL){
 
   # Assign class and default value
   void <- lapply(intersect(names(dt), names(metar.vars)), function(i){
-    # i = "time"
     var.name <- i
     type <- metar.vars[[i]]$type
     fct <- ifelse(type != "POSIXct", paste("as", metar.vars[[i]]$type, sep = "."), "c") # Protect POSIXct (as.POSIXct fails)
@@ -95,11 +97,13 @@ parse_metar <- function(x, date = NULL){
     suppressWarnings(dt[, (var.name) := lapply(.SD, fct), .SDcols = c(var.name)])
     dt[is.na(dt[[var.name]]) & !is.null(default), (var.name) := default]
   })
+
+  # Covert time to POSIXct
   dt[, time := as.POSIXct(as.integer(time), origin = "1970-01-01", tz = "UTC")]
 
   # Convert units
-  wind.conversion <- list(KT = 1, MPH = 1.1507767864273, MPS = 0.514444)
-  vis.conversion <- list(KM = 1000, M = 1, SM = 1609.344) # Statute miles
+  wind.conversion <- list(KT = 1, MPH = 0.868976, MPS = 1.94384) # to knots
+  vis.conversion <- list(KM = 1000, M = 1, SM = 1609.344) # to meters,  (statute miles)
   qnh.conversion <- list(Q = 1, A = 1/2.953)
   tt.conversion <- list(M = -1, P = 1)
 
@@ -116,6 +120,7 @@ parse_metar <- function(x, date = NULL){
   dt[, `:=`(vis = data.table::fifelse(`%in%`(wx, "CAVOK"), 9999, vis))]
   dt[, `:=`(cld = data.table::fifelse(`%in%`(wx, c("NCD", "NSC", "SKC")), wx, cld))]
   dt[, `:=`(cld = data.table::fifelse(!`%in%`(vvis, NA), "IMC", cld))]
+  dt[, `:=`(vvis = vvis*1e2)]
 
   # Drop auxiliary data columns
   drop.col <-  c(names(metar.vars)[unname(sapply(metar.vars, '[[', "drop")) == F])
@@ -137,6 +142,7 @@ parse_metar <- function(x, date = NULL){
 #' metar_pw(pw = parse_metar(metar.test)$pw)
 #'
 metar_pw <- function(pw){
+  # Debug
   # pw <- c("RADZ VCSH RERA", "SNRA +SNDZ SHRADZ", "FZRA VCFG", "", "MIFG BR", "BLSN", "VCTS", "+TS", "-RA FZFG", "+TSSHRA", "VCTS +RA BR", "MIFG")
 
   dt.pw <- data.table(pw)
@@ -180,14 +186,6 @@ metar_pw <- function(pw){
   setnames(dt.dc, pw.dc)
   setnames(dt.dc, c("SH", "TS"), c("dc_SH", "dc_TS"))
 
-  # m.dc <- str_match_all()
-  # dt.dc <- data.table(do.call(rbind, m.dc)[,-1, drop = FALSE])
-  # dt.dc$id <- rep(seq_along(m.dc), sapply(m.dc, nrow))
-  # dt.dc <- dt.dc[, lapply(.SD, function(i) 1*any(!is.na(i))), id]
-  # setnames(dt.dc, c( "id", pw.dc))
-  # setnames(dt.dc, c("SH", "TS"), c("dc_SH", "dc_TS"))
-  # setkey(dt.dc, id)
-
   # Combine
   dt.comb <- cbind(dt.pw, dt.ph, dt.ph.vc, dt.dc)
   dt.comb[, id := .I]
@@ -200,13 +198,14 @@ metar_pw <- function(pw){
   dt.comb[, `:=`(is_obsc = do.call(pmax,.SD)), .SDcols = dt.ph.lut[type == "Obscuration"]$ph]
   dt.comb[, `:=`(is_liquid = do.call(pmax,.SD)), .SDcols = dt.ph.lut[subtype == "Liquid"]$ph]
   dt.comb[, `:=`(is_solid = do.call(pmax,.SD)), .SDcols = dt.ph.lut[subtype == "Solid"]$ph]
+  dt.comb[, `:=`(is_sandstorm = do.call(pmax,.SD)), .SDcols = dt.ph.lut[group == "Sand-/Duststorm"]$ph]
+  dt.comb[, `:=`(is_storm = do.call(pmax,.SD)), .SDcols = dt.ph.lut[group == "Storm/Hail" & ph != "TS"]$ph]
+
   dt.comb[, `:=`(int = str_extract(pw, "([\\+\\-])"))]
   dt.comb[, `:=`(int = fifelse(int == "+", 3, fifelse(int == "-", 1, 2)))]
   dt.comb[, `:=`(is_mixed = (is_liquid * is_solid))]
   dt.comb[, `:=`(pw = NULL)][]
-  #dt.comb[, .N, int]
 
-  #dt.comb <- Filter(function(x) !all(x == 0), dt.comb)   # Drop empty columns
   dt.comb
 }
 

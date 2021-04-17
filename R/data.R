@@ -80,14 +80,15 @@ read_station <- function(fi.name = ".+", fi.icao = ".+", fi.ctry = ".+", fi.lat 
     x = fifelse(we == "E", as.numeric(lon_deg) + as.numeric(lon_num)/60, -(as.numeric(lon_deg) + as.numeric(lon_num)/60)),
     y = fifelse(ns == "N", as.numeric(lat_deg) + as.numeric(lat_num)/60, -(as.numeric(lat_deg) + as.numeric(lat_num)/60))
   )]
+
   dt.station <- dt.station[, .(ctry, name, icao, synop, iata, x, y, z)]
 
   # Filter
   dt.station[grepl(fi.name, name, ignore.case = TRUE) &
                grepl(fi.ctry, ctry, ignore.case = TRUE) &
                grepl(fi.icao, icao, ignore.case = TRUE) &
-               between(x, fi.lon[1], fi.lon[2]) &
-               between(y, fi.lat[1], fi.lat[2]
+               data.table::between(x, fi.lon[1], fi.lon[2]) &
+               data.table::between(y, fi.lat[1], fi.lat[2]
   )]
 }
 
@@ -106,12 +107,11 @@ metar_latest <- function(id_icao = NULL, latest = TRUE){
   time.local <- Sys.time()
   attr(time.local, "tzone") <- "UTC"
   time.floor <- lubridate::floor_date(time.local, "1 hour")
-  url.data <- sprintf("https://tgftp.nws.noaa.gov/data/observations/metar/cycles/%02dZ.TXT", hour(time.floor))
+  url.data <- sprintf("https://tgftp.nws.noaa.gov/data/observations/metar/cycles/%02dZ.TXT", data.table::hour(time.floor))
   dt.lines <- readr::read_lines(url.data)
   reports <- dt.lines[grepl("^([A-Z]{4}).+", dt.lines)]
 
   id <- str_extract(reports,"^([A-Z]{4})") # extract id icao
-  #reports <- reports[which(id %in% id_icao)] # Filter
   reports <- reports[grepl(sprintf("^%s", id_icao), id)] # Filter
 
   # Remove duplicates

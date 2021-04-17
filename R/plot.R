@@ -41,28 +41,71 @@ multicolor.title <- function(main, col.main, collapse='', ...) {
   }
 }
 
+#' Fill time gaps
+#'
+#' @author M. Saenger
+#' @param x time vector
+#' @export
+#'
+fill_time_gaps <- function(x){
+  dtime <- as.numeric(diff(x), "secs")
+  dtime.pick <- as.numeric(names(sort(table(dtime), decreasing = TRUE)[1]))
+  gaps <- which(dtime > dtime.pick)
+  fill.seq <- sapply(gaps, function(i) seq(x[i], x[i + 1], sprintf("%1.0f sec", dtime.pick)), simplify = FALSE)
+  fill.seq <- do.call(c, fill.seq)
+  sort(c(x, fill.seq))
+}
+
+#' Determine value range
+#'
+#' @author M. Saenger
+#' @param x vector
+#' @param para parameter
+#' @export
+#'
+get_range <- function(x, para){
+  def.para <- metar.vars[[para]]
+  if(all(is.na(x))){
+    return(c(def.para$min, def.para$max))
+  }
+  range(x, na.rm = TRUE)
+}
+
+
 #' Plot METARgram
 #'
 #' @author M. Saenger
 #' @param dat data set
 #' @param cex global text size
+#' @param attribution data source
 #' @export
 #'
-plot_metargram <- function(dat, cex = .9){
+plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. https://mesonet.agron.iastate.edu/"){
 
-  if(nrow(dat) < 1){
+  if(nrow(dat) < 2 | all(is.na(dat$tt)) ){
     warning("No data found - returning empty data table")
     return(data.table())
   }
+  # Fill time gaps
+  setorder(dat, time)
+  dt.time <- data.table(time = fill_time_gaps(x = dat$time))
+  dt.time$icao <- dat$icao[1]
+  dat <- dat[dt.time, on = c("time", "icao")]
 
-  fill.alpha <- 0.2
+  # Station meta data
   dat.stn <- read_station(fi.icao = dat$icao[1])
-  title <- sprintf("%s | %s | %s | %1.0fm AMSL", dat.stn$icao, dat.stn$name, dat.stn$ctry, dat.stn$z)
+
+  # Basic data validation
+  dat[, fx := fifelse(fx > ff*5, NA_real_, fx)] # Gust factor > 5
+  dat[, td := fifelse(td > tt, NA_real_, td)] # Dew point > temperature
+
 
   # Average time interval
   dt <- as.numeric(stats::median(diff(dat$time), na.rm = TRUE), "secs")
 
   # Layout
+  fill.alpha <- 0.2
+  title <- sprintf("%s | %s | %s | %1.0fm AMSL | \U03BB %1.2f\U00B0 \U03A6 %1.2f\U00B0", dat.stn$icao, dat.stn$name, dat.stn$ctry, dat.stn$z, dat.stn$x, dat.stn$y)
   mat <- matrix(1:5, 5, 1, byrow = TRUE)
 
   # Plot
@@ -73,7 +116,7 @@ plot_metargram <- function(dat, cex = .9){
   graphics::par(mai = c(0, 0.5, 0.3, 0.1)*cex)
   graphics::plot.new()
   graphics::mtext(title, side = 3, line = 0, cex=cex*1.75, font=2, adj = 0, xpd = TRUE)
-  graphics::mtext("METARgram", side = 3, line = 0, cex=cex, font=2, adj = 1, xpd = TRUE)
+  graphics::mtext(sprintf("METARgram: https://github.com/m-saenger/metar\n%s", attribution), side = 3, line = 0, cex=cex*.8, font=1, adj = 1, xpd = TRUE)
 
   graphics::par(mai = c(0.1, 0.5, 0.3, 0.1)*cex, cex = cex, cex.lab = cex, cex.axis = cex*.9, cex.main = cex*1.2,
                 mgp = c(2, .5, 0)/cex, tcl = -0.3*cex)
@@ -85,7 +128,7 @@ plot_metargram <- function(dat, cex = .9){
   cols <- grDevices::colorRampPalette(c("firebrick", "goldenrod", "white"))(length(brks) - 1)
   dt.rh[, col := cut(rh, brks, cols)]
 
-  title.txt <- c("Temperature | ", "Dew Point", " [°C]")
+  title.txt <- c("Temperature | ", "Dew Point", " [\U0B0 C]")
   title.col <-  c( "black", "dodgerblue2", "black")
   title.2.txt <- c("Relative humidity [%]", brks)
   title.2.col <-  c("black",  grDevices::colorRampPalette(c("firebrick", "goldenrod", "white"))(length(brks)))
@@ -137,11 +180,10 @@ plot_metargram <- function(dat, cex = .9){
 
   title.1.txt <- c("Pressure QNH [hPa]", "")
   title.1.col <-  c("black", "black")
-  title.2.txt <- c("Pressure Tendency [hPA/3h]", brks)
+  title.2.txt <- c("Pressure Tendency [hPa/3h]", brks)
   title.2.col <-  c("black",  grDevices::colorRampPalette(c("dodgerblue2", "white", "firebrick"))(length(brks)))
 
-
-  plot(dat$time, dat$qnh, ylim = range(dat$qnh, na.rm = TRUE), type = "n", ann = FALSE,  xaxs="i", yaxt = "n", xaxt = "n")
+  plot(dat$time, dat$qnh, ylim = get_range(x = dat$qnh, para = "qnh"), type = "n", ann = FALSE,  xaxs="i", yaxt = "n", xaxt = "n")
   ylim <- c(graphics::par("usr")[3], graphics::par("usr")[4])
   multicolor.title(title.1.txt, title.1.col, adj = 0, line = .70, font = 2)
   multicolor.title(title.2.txt, title.2.col, collapse = " ", adj = 1, line = .70, font = 2)
@@ -153,21 +195,15 @@ plot_metargram <- function(dat, cex = .9){
   graphics::lines(dat$time, dat$qnh, type = "l")
   graphics::box()
 
-  # Vis
-  dat.pw <- dat[,
-    .(time, pw = dplyr::case_when(
-      TS == 1 ~ "firebrick",
-      is_solid == 1 ~ "magenta",
-      is_liquid == 1 ~ "dodgerblue2",
-      FG == 1 ~ "#888888",
-      TRUE ~ NA_character_
-    ))
-  ]
+  # Vis /Signif Weather
+  cond <- c(is_storm = "orange", TS = "red", is_sandstorm = "maroon", is_solid = "magenta", is_liquid = "dodgerblue2", FG = "#888888", ctrl = NA_character_)
+  dat$ctrl <- 1
+  dat.pw <- dat[,  .(time, pw, pw_col = cond[apply(sapply(.SD, function(i) (i == 1)*1), 1, which.max)]), .SDcols = names(cond)]
 
   title.1.txt <- c("Visibility [km]: ", "Meteorological | ", "Vertical (+)")
   title.1.col <-  c("black", "black", "dodgerblue2")
-  title.2.txt <- c("Weather: ", " Fog", " Liquid", " Solid", " Thunderstorm")
-  title.2.col <-  c("black", "#888888", "dodgerblue2", "magenta", "firebrick")
+  title.2.txt <- c("Significant Weather: ", " Fog", " Liquid", " Solid", " Sandstorm", " Thunderstorm", " Storm")
+  title.2.col <-  c("black", "#888888", "dodgerblue2", "magenta", "maroon", "red", "orange")
 
   graphics::par(mai = c(0.3, 0.5, 0.4, 0.1)*cex)
   plot(dat$time, dat$vis, ylim = c(0.1, 25), type = "n", ann = FALSE, log = "y",  xaxs="i", yaxt = "n")
@@ -176,35 +212,15 @@ plot_metargram <- function(dat, cex = .9){
   # Weather
   ylim <- 10^c(graphics::par("usr")[3], graphics::par("usr")[4])
   graphics::rect(xleft = dat.pw$time, xright = shift(dat.pw$time, type = "lag"), ybottom = ylim[1], ytop = ylim[2],
-                 col = set_alpha(dat.pw$pw, fill.alpha), lty = 0)
+                 col = set_alpha(dat.pw$pw_col, 0.3), lty = 0)
   graphics::grid(nx = NA, ny = NULL)
   graphics::axis.POSIXct(1, dat$time, tck=1, lty = "dotted", col = "lightgray")
   graphics::axis(2, c(100, 300, 1000, 3000, 10000)/1e3, tck=1, las = 2, lty = "dotted", col = "lightgray")
   graphics::lines(dat$time, dat$vis/1e3, type = "s")
-  graphics::points(dat$time, dat$vvis, pch = "+", col = "dodgerblue2")
+  graphics::points(dat$time, dat$vvis/1e3, pch = "+", col = "dodgerblue2")
   graphics::box()
 
   graphics::par(def.par)  #- reset to default
 
 }
-
-# library(metar); library(stringr) library(data.table)
-# id.icao.list <- c("PTRO", "PTYA", "BIKF", "YGEL", "LSZH", "FTTJ", "SAWH", "GCXO")
-#
-# void <- lapply(id.icao.list, function(id.icao){
-#   # id.icao <- "GCXO"
-#   date.start <- "2021-03-17"
-#   date.end <- "2021-04-17"
-#   dat.metar <- read_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end)
-#   dat.parsed <- parse_metar(dat.metar$metar)
-#   dat.parsed$time <- dat.metar$valid
-#
-#   dat.1 <- cbind(dat.parsed, dat.parsed[, metar_pw(pw)])
-#
-#   file.name <- file.path("C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/Data/metar", sprintf("%s_%s.png", id.icao, date.end))
-#   png(file.name, width = 1920, height = 1080, units = "px", res = 96)
-#   plot_metargram(dat = dat.1[(fx < 100) | is.na(fx)], cex = 1.1)
-#   dev.off()
-# })
-
 

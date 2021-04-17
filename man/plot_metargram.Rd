@@ -4,12 +4,18 @@
 \alias{plot_metargram}
 \title{Plot METARgram}
 \usage{
-plot_metargram(dat, cex = 0.9)
+plot_metargram(
+  dat,
+  cex = 0.9,
+  attribution = "Data: Iowa State Univ. https://mesonet.agron.iastate.edu/"
+)
 }
 \arguments{
 \item{dat}{data set}
 
 \item{cex}{global text size}
+
+\item{attribution}{data source}
 }
 \description{
 Plot METARgram
