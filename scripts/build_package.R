@@ -49,8 +49,8 @@ devtools::document()
 devtools::check()
 # devtools::build_readme()
 
-p <- devtools::build()
 detach("package:metar", unload = TRUE)
+p <- devtools::build()
 devtools::install_local(p, force = TRUE, upgrade = "never")
 library(metar)
 

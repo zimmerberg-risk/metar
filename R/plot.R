@@ -115,10 +115,10 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
   # Title
   graphics::par(mai = c(0, 0.5, 0.3, 0.1)*cex)
   graphics::plot.new()
-  graphics::mtext(title, side = 3, line = 0, cex=cex*1.75, font=2, adj = 0, xpd = TRUE)
+  graphics::mtext(title, side = 3, line = 0, cex=cex*1.5, font=2, adj = 0, xpd = TRUE)
   graphics::mtext(sprintf("METARgram: https://github.com/m-saenger/metar\n%s", attribution), side = 3, line = 0, cex=cex*.8, font=1, adj = 1, xpd = TRUE)
 
-  graphics::par(mai = c(0.1, 0.5, 0.3, 0.1)*cex, cex = cex, cex.lab = cex, cex.axis = cex*.9, cex.main = cex*1.2,
+  graphics::par(mai = c(0.1, 0.5, 0.3, 0.1)*cex, cex = cex, cex.lab = cex, cex.axis = cex*.9, cex.main = cex*1.1,
                 mgp = c(2, .5, 0)/cex, tcl = -0.3*cex)
 
 

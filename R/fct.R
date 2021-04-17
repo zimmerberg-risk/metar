@@ -143,7 +143,7 @@ parse_metar <- function(x, date = NULL){
 #'
 metar_pw <- function(pw){
   # Debug
-  # pw <- c("RADZ VCSH RERA", "SNRA +SNDZ SHRADZ", "FZRA VCFG", "", "MIFG BR", "BLSN", "VCTS", "+TS", "-RA FZFG", "+TSSHRA", "VCTS +RA BR", "MIFG")
+  # pw <- c(NA, "RERASN", "RADZ VCSH RERA", "SNRA +SNDZ SHRADZ", "FZRA VCFG", "", "MIFG BR", "BLSN", "VCTS", "+TS", "-RA FZFG", "+TSSHRA", "VCTS +RA BR", "MIFG")
 
   dt.pw <- data.table(pw)
   dt.pw[, `:=`(id = .I, recent = str_extract(pw, "(?<=RE)([A-Z]+)\\b"), pw = str_remove(pw, "(\\s)?RE[A-Z]+\\b"))]
@@ -161,37 +161,33 @@ metar_pw <- function(pw){
   dt.res[, id_pw_grp := 1:.N, id]
   dt.res <- data.table::dcast(dt.res, id ~ id_pw_grp, value.var = c("pw_grp",  names(metar.vars.pw)))
 
-  # Phenomena
-  m.ph <- str_match(dt.res$ph_1, sprintf("((?<!VC)%s)", paste(pw.ph, collapse = ")|(?<!VC)(")))
-  m.ph[!is.na(m.ph)] <- 1
-  m.ph[is.na(m.ph)] <- 0
-  class(m.ph) <- "integer"
-  dt.ph <- data.table(m.ph[,-1, drop = FALSE])
+  # Phenomena (exlucde RExx and VCxx)
+  ph.match <- str_match_all(dt.pw$pw, sprintf("((?<!VC|RE)%s)", paste(pw.ph, collapse = ")|(?<!VC|RE)(")))
+  ph.matrix <- lapply(ph.match, function(i) (!is.na(i))*1)
+  ph.sums <- (do.call(rbind, lapply(ph.matrix, colSums)) > 0)*1
+  dt.ph <- data.table(ph.sums[,-1, drop = FALSE])
   setnames(dt.ph, pw.ph)
 
   # VC Phenomena
-  m.ph.vc <- str_match(dt.pw$pw, sprintf("((?<=VC)%s)", paste(pw.ph, collapse = ")|(?<=VC)(")))
-  m.ph.vc[!is.na(m.ph.vc)] <- 1
-  m.ph.vc[is.na(m.ph.vc)] <- 0
-  class(m.ph.vc) <- "integer"
-  dt.ph.vc <- data.table(m.ph.vc[,-1, drop = FALSE])
-  setnames(dt.ph.vc,  paste0("VC_", pw.ph))
+  vc.match <- str_match_all(dt.pw$pw, sprintf("((?<=VC)%s)", paste(pw.ph, collapse = ")|(?<=VC)(")))
+  vc.matrix <- lapply(vc.match, function(i) (!is.na(i))*1)
+  vc.sums <- (do.call(rbind, lapply(vc.matrix, colSums)) > 0)*1
+  dt.vc <- data.table(vc.sums[,-1, drop = FALSE])
+  setnames(dt.vc, paste0("VC_", pw.ph))
 
   # Descriptor
-  m.dc <- str_match(dt.pw$pw, sprintf("((?<!VC)%s)", paste(pw.dc, collapse = ")|(?<!VC)(")))
-  m.dc[!is.na(m.dc)] <- 1
-  m.dc[is.na(m.dc)] <- 0
-  class(m.dc) <- "integer"
-  dt.dc <- data.table(m.dc[,-1, drop = FALSE])
+  dc.match <- str_match_all(dt.pw$pw, sprintf("((?<!VC)%s)", paste(pw.dc, collapse = ")|(?<!VC)(")))
+  dc.matrix <- lapply(dc.match, function(i) (!is.na(i))*1)
+  dc.sums <- (do.call(rbind, lapply(dc.matrix, colSums)) > 0)*1
+  dt.dc <- data.table(dc.sums[,-1, drop = FALSE])
   setnames(dt.dc, pw.dc)
   setnames(dt.dc, c("SH", "TS"), c("dc_SH", "dc_TS"))
 
+
   # Combine
-  dt.comb <- cbind(dt.pw, dt.ph, dt.ph.vc, dt.dc)
+  dt.comb <- cbind(dt.pw, dt.ph, dt.vc, dt.dc)
   dt.comb[, id := .I]
   dt.comb <- merge(dt.res, dt.comb, by = "id", all.y = TRUE)
-
-  #dt.comb <- Reduce(function(...) merge(..., all = TRUE), list(dt.pw, dt.res, dt.ph, dt.ph.vc, dt.dc))
 
   # Derivatives
   dt.comb[, `:=`(is_pp = do.call(pmax,.SD)), .SDcols = dt.ph.lut[type == "Precipitation"]$ph]
@@ -269,7 +265,8 @@ metar_rvr <- function(rvr){
     fct <- paste("as", metar.vars.rvr[[i]]$type, sep = ".")
     dt.rvr[, (i) := lapply(.SD, fct), .SDcols = c(i)]
   })
-  data.table::dcast(dt.rvr[], id ~ rvr_group, value.var = names(metar.vars.rvr))
+  dt.out <- data.table::dcast(dt.rvr[], id ~ rvr_group, value.var = names(metar.vars.rvr))
+  dt.out[, `:=`(id = NULL)][]
 }
 
 # --------------------------------------------------- Formulas --------------------------------------------

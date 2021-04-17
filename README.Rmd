@@ -25,6 +25,9 @@ Install the development version from [GitHub](https://github.com/) with:
 # install.packages("devtools") 
 devtools::install_github("m-saenger/metar")
 ```
+
+This package depends on **data.table**, **stringr**, **readr** and **lubridate**.
+
 ## Example
 
 ### Data retrieval and parsing
@@ -33,13 +36,13 @@ devtools::install_github("m-saenger/metar")
 library(metar)
 
 ## read raw data from Mesonet website
-dat <- read_mesonet("LSZH", as.POSIXct("2021-03-26"), as.POSIXct("2021-03-28"))
+dat <- read_mesonet("LSZH", as.POSIXct("2021-03-15"), as.POSIXct("2021-03-28"))
 
 ## parse METAR code
-dat.parsed <- parse_metar(dat$metar)
+dat.parsed <- parse_metar(dat$metar, date = dat$valid)
 
-# Structure
-str(dat.parsed)
+# Structure  (subset of columns)
+print(dat.parsed[1:10, .(icao, metar, tt, ff, qnh)])
 
 ```
 
@@ -61,8 +64,8 @@ ggplot(dat.parsed, aes(time, tt)) +
 dat.cld <- metar_clouds(dat.parsed$cl)    
 dat.cld$time <- dat.parsed$time
 
-# Structure
-str(dat.cld)
+# Structure (subset of columns)
+print(dat.cld[1:10, .(time, cld_levels, cld_str_1 , cld_amt_1, cld_hgt_1, cld_type_1 )])
 
 ggplot(dat.cld, aes(time, cld_hgt_1)) +
   geom_path() +
@@ -70,4 +73,23 @@ ggplot(dat.cld, aes(time, cld_hgt_1)) +
   theme_bw()
 
 ```
+
+### METARgram - Timeseries
+
+```{r plot3}
+# Parse present weather group
+dat.pw <- dat.parsed[, metar_pw(pw)]
+
+# Structure (subset of columns)
+print(dat.pw[1:10, .(pw_grp_1, pw_grp_2, is_pp, RA, SN, DZ, is_solid, is_liquid, is_mixed)])
+
+# Bind data
+dat.plot <- cbind(dat.parsed, dat.pw)
+
+plot_metargram(dat = dat.plot, cex = 0.7)
+
+
+```
+
+
 
