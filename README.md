@@ -4,14 +4,25 @@
 # metar
 
 The goal of **metar** is to provide an R-built parser for METAR reports.
+Find more information about METAR under
+<https://en.wikipedia.org/wiki/METAR>
 
 ## Installation
 
-Install the development version from [GitHub](https://github.com/) with:
+Install the development version from
+[GitHub](https://github.com/m-saenger/metar) with:
 
 ``` r
 # install.packages("devtools") 
-devtools::install_github("m-saenger/metar")
+devtools::install_github("m-saenger/metar", upgrade = "never")
+```
+
+Install the latest stable version from
+[GitHub](https://github.com/m-saenger/metar/tags) with:
+
+``` r
+# install.packages("devtools") 
+devtools::install_github("m-saenger/metar@0.3.1", upgrade = "never")
 ```
 
 This package depends on **data.table**, **stringr**, **readr** and
@@ -31,29 +42,61 @@ dat <- read_mesonet("LSZH", as.POSIXct("2021-03-15"), as.POSIXct("2021-03-28"))
 dat.parsed <- parse_metar(dat$metar, date = dat$valid)
 
 # Structure  (subset of columns)
-print(dat.parsed[1:10, .(icao, metar, tt, ff, qnh)])
-#>     icao                                                              metar tt
-#>  1: LSZH                     25005KT 220V280 9999 FEW008 BKN012 02/01 Q1017  2
-#>  2: LSZH                             VRB02KT 9999 FEW008 BKN010 02/01 Q1017  2
-#>  3: LSZH 19003KT 120V230 9999 -SHSNRA FEW007 SCT011 BKN016 02/01 Q1017 RESN  2
-#>  4: LSZH              VRB03KT 9999 -SHSNRA FEW007 SCT012 BKN017 02/01 Q1016  2
-#>  5: LSZH         21005KT 9999 -SHSNRA FEW011 SCT014 BKN019 02/01 Q1016 RESN  2
-#>  6: LSZH              22007KT 9999 -SHSNRA FEW009 SCT015 BKN060 02/01 Q1015  2
-#>  7: LSZH                    20006KT 9999 FEW010 BKN013 02/01 Q1015 RESHSNRA  2
-#>  8: LSZH         22006KT 9999 -SHSNRA FEW009 SCT012 BKN017 03/01 Q1015 RESN  3
-#>  9: LSZH                     22007KT 9999 -SHSNRA FEW009 BKN012 02/01 Q1014  2
-#> 10: LSZH          22006KT 180V280 6000 -RASN BKN010 BKN015 02/01 Q1014 RESN  2
-#>     ff  qnh
-#>  1:  5 1017
-#>  2:  2 1017
-#>  3:  3 1017
-#>  4:  3 1016
-#>  5:  5 1016
-#>  6:  7 1015
-#>  7:  6 1015
-#>  8:  6 1015
-#>  9:  7 1014
-#> 10:  6 1014
+print(dat.parsed[1:10, .(metar, tt, qnh)])
+#>                                                                  metar tt  qnh
+#>  1:                     25005KT 220V280 9999 FEW008 BKN012 02/01 Q1017  2 1017
+#>  2:                             VRB02KT 9999 FEW008 BKN010 02/01 Q1017  2 1017
+#>  3: 19003KT 120V230 9999 -SHSNRA FEW007 SCT011 BKN016 02/01 Q1017 RESN  2 1017
+#>  4:              VRB03KT 9999 -SHSNRA FEW007 SCT012 BKN017 02/01 Q1016  2 1016
+#>  5:         21005KT 9999 -SHSNRA FEW011 SCT014 BKN019 02/01 Q1016 RESN  2 1016
+#>  6:              22007KT 9999 -SHSNRA FEW009 SCT015 BKN060 02/01 Q1015  2 1015
+#>  7:                    20006KT 9999 FEW010 BKN013 02/01 Q1015 RESHSNRA  2 1015
+#>  8:         22006KT 9999 -SHSNRA FEW009 SCT012 BKN017 03/01 Q1015 RESN  3 1015
+#>  9:                     22007KT 9999 -SHSNRA FEW009 BKN012 02/01 Q1014  2 1014
+#> 10:          22006KT 180V280 6000 -RASN BKN010 BKN015 02/01 Q1014 RESN  2 1014
+```
+
+### Variable names
+
+``` r
+library(data.table)
+#> Warning: package 'data.table' was built under R version 4.0.4
+vars <- data.table::rbindlist(metar.vars, fill = TRUE, idcol = "short_name")
+print(vars[, .(short_name, name)])
+#>      short_name                   name
+#>  1:       metar                  METAR
+#>  2:         cor             Correction
+#>  3:        icao                   ICAO
+#>  4:        time                   Time
+#>  5:        auto                   AUTO
+#>  6:         dir              Wind Dir.
+#>  7:          ff             Wind Speed
+#>  8:          fx             Wind Gusts
+#>  9:     ff_unit              Wind Unit
+#> 10:    dir_from         Var. Wind From
+#> 11:      dir_to           Var. Wind To
+#> 12:         vis             Visibility
+#> 13:    vis_unit              Vis. Unit
+#> 14:         ndv                    NVD
+#> 15:     min_vis              Min. Vis.
+#> 16: min_vis_dir         Min. Vis. Dir.
+#> 17:         cld           Cloud Groups
+#> 18:         rvr             RVR Groups
+#> 19:          pw Present Weather Groups
+#> 20:        vvis          Vertical Vis.
+#> 21:          wx                  CAVOK
+#> 22:     tt_sign             Temp. Sign
+#> 23:          tt            Temperature
+#> 24:     td_sign               Dew Sign
+#> 25:          td              Dew Point
+#> 26:    qnh_unit               QNH Unit
+#> 27:         qnh                    QNH
+#> 28:          ws             Wind Shear
+#> 29:      recent                 Recent
+#> 30:   trend_ind             Trend Ind.
+#> 31:   trend_str                  Trend
+#> 32:         rmk                 Remark
+#>      short_name                   name
 ```
 
 ### Example plot
@@ -121,7 +164,7 @@ print(dat.pw[1:10, .(pw_grp_1, pw_grp_2, is_pp, RA, SN, DZ, is_solid, is_liquid,
 # Bind data
 dat.plot <- cbind(dat.parsed, dat.pw)
 
-plot_metargram(dat = dat.plot, cex = 0.7)
+plot_metargram(dat = dat.plot, cex = 0.8)
 ```
 
 <img src="man/figures/README-plot3-1.png" width="100%" />

@@ -7,7 +7,7 @@
 plot_metargram(
   dat,
   cex = 0.9,
-  attribution = "Data: Iowa State Univ. https://mesonet.agron.iastate.edu/"
+  attribution = "Data: Iowa State Univ. mesonet.agron.iastate.edu/"
 )
 }
 \arguments{

@@ -9,21 +9,30 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "man/figures/README-",
-  out.width = "100%"
+  out.width = "100%",
+  fig.width = 9,
+  fig.height = 6
 )
 ```
 
 # metar
 
-The goal of **metar** is to provide an R-built parser for METAR reports. 
+The goal of **metar** is to provide an R-built parser for METAR reports. Find more information about METAR under https://en.wikipedia.org/wiki/METAR
 
 ## Installation
 
-Install the development version from [GitHub](https://github.com/) with:
+Install the development version from [GitHub](https://github.com/m-saenger/metar) with:
 
 ``` r
 # install.packages("devtools") 
-devtools::install_github("m-saenger/metar")
+devtools::install_github("m-saenger/metar", upgrade = "never")
+```
+
+Install the latest stable version from [GitHub](https://github.com/m-saenger/metar/tags) with:
+
+``` r
+# install.packages("devtools") 
+devtools::install_github("m-saenger/metar@0.3.1", upgrade = "never")
 ```
 
 This package depends on **data.table**, **stringr**, **readr** and **lubridate**.
@@ -42,9 +51,21 @@ dat <- read_mesonet("LSZH", as.POSIXct("2021-03-15"), as.POSIXct("2021-03-28"))
 dat.parsed <- parse_metar(dat$metar, date = dat$valid)
 
 # Structure  (subset of columns)
-print(dat.parsed[1:10, .(icao, metar, tt, ff, qnh)])
+print(dat.parsed[1:10, .(metar, tt, qnh)])
 
 ```
+
+### Variable names
+
+```{r Variable}
+
+library(data.table)
+vars <- data.table::rbindlist(metar.vars, fill = TRUE, idcol = "short_name")
+print(vars[, .(short_name, name)])
+
+
+```
+
 
 ### Example plot
 
@@ -86,7 +107,7 @@ print(dat.pw[1:10, .(pw_grp_1, pw_grp_2, is_pp, RA, SN, DZ, is_solid, is_liquid,
 # Bind data
 dat.plot <- cbind(dat.parsed, dat.pw)
 
-plot_metargram(dat = dat.plot, cex = 0.7)
+plot_metargram(dat = dat.plot, cex = 0.8)
 
 
 ```

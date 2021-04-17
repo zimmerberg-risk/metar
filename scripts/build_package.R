@@ -49,10 +49,18 @@ devtools::document()
 devtools::check()
 # devtools::build_readme()
 
-detach("package:metar", unload = TRUE)
+
 p <- devtools::build()
+detach("package:metar", unload = TRUE)
+remove.packages("metar")
 devtools::install_local(p, force = TRUE, upgrade = "never")
 library(metar)
 
 # https://github.com/m-saenger/metar
 devtools::install_github("m-saenger/metar", upgrade = "never")
+
+# git tag 0.3.1
+# git push --tags
+# git tags
+
+

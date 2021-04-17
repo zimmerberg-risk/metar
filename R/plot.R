@@ -80,7 +80,7 @@ get_range <- function(x, para){
 #' @param attribution data source
 #' @export
 #'
-plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. https://mesonet.agron.iastate.edu/"){
+plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. mesonet.agron.iastate.edu/"){
 
   if(nrow(dat) < 2 | all(is.na(dat$tt)) ){
     warning("No data found - returning empty data table")
@@ -105,7 +105,7 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
 
   # Layout
   fill.alpha <- 0.2
-  title <- sprintf("%s | %s | %s | %1.0fm AMSL | \U03BB %1.2f\U00B0 \U03A6 %1.2f\U00B0", dat.stn$icao, dat.stn$name, dat.stn$ctry, dat.stn$z, dat.stn$x, dat.stn$y)
+  title <- sprintf("%s | %s | %s | %1.0fm | \U03BB %1.2f\U00B0 \U03A6 %1.2f\U00B0", dat.stn$icao, dat.stn$name, dat.stn$ctry, dat.stn$z, dat.stn$x, dat.stn$y)
   mat <- matrix(1:5, 5, 1, byrow = TRUE)
 
   # Plot
@@ -115,7 +115,7 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
   # Title
   graphics::par(mai = c(0, 0.5, 0.3, 0.1)*cex)
   graphics::plot.new()
-  graphics::mtext(title, side = 3, line = 0, cex=cex*1.5, font=2, adj = 0, xpd = TRUE)
+  graphics::mtext(title, side = 3, line = 0, cex = cex*1.3, font=2, adj = 0, xpd = TRUE)
   graphics::mtext(sprintf("METARgram: https://github.com/m-saenger/metar\n%s", attribution), side = 3, line = 0, cex=cex*.8, font=1, adj = 1, xpd = TRUE)
 
   graphics::par(mai = c(0.1, 0.5, 0.3, 0.1)*cex, cex = cex, cex.lab = cex, cex.axis = cex*.9, cex.main = cex*1.1,
