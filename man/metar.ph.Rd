@@ -5,7 +5,7 @@
 \alias{metar.ph}
 \title{Present Weather Phenomena}
 \format{
-An object of class \code{list} of length 23.
+An object of class \code{data.table} (inherits from \code{data.frame}) with 23 rows and 5 columns.
 }
 \usage{
 metar.ph
@@ -13,4 +13,4 @@ metar.ph
 \description{
 Present Weather Phenomena
 }
-\keyword{dataset}
+\keyword{datasets}

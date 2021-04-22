@@ -23,21 +23,23 @@ set_alpha <- function(x, alpha = 1){
 multicolor.title <- function(main, col.main, collapse='', ...) {
   if (length(main) != length(col.main)) {stop('main and col must have same length')}
   n <- length(main)
+
   if(n==1) {
-    graphics::title(bquote(.(main[1])),col.main=col.main[1], ...)
+    graphics::title(bquote(.(main[1])), col.main=col.main[1], ...)
   } else {
     # print first
-    graphics::title(bquote(.(main[1]) * phantom(.(paste0(main[2:n],collapse=collapse)))),col.main=col.main[1], ...)
+    graphics::title(bquote(.(main[1]) * phantom(.(paste0(main[2:n],collapse=collapse)))), col.main=col.main[1], ...)
 
     # print middle
     if(n > 2) {
       for(i in 2:(n-1)) {
-        graphics::title(bquote(phantom(.(paste0(main[1:(i-1)],collapse=collapse))) * .(main[i]) * phantom(.(paste0(main[(i+1):n],collapse=collapse)))),col.main=col.main[i], ...)
+        graphics::title(bquote(phantom(.(paste0(main[1:(i-1)],collapse=collapse))) * .(main[i]) * phantom(.(paste0(main[(i+1):n],collapse=collapse)))),
+                        col.main=col.main[i], ...)
       }
     }
 
     # print last
-    graphics::title(bquote(phantom(.(paste0(main[1:(n-1)],collapse=collapse))) * .(main[n])),col.main=col.main[n], ...)
+    graphics::title(bquote(phantom(.(paste0(main[1:(n-1)],collapse=collapse))) * .(main[n])), col.main=col.main[n], ...)
   }
 }
 
@@ -64,7 +66,7 @@ fill_time_gaps <- function(x){
 #' @export
 #'
 get_range <- function(x, para){
-  def.para <- metar.vars[[para]]
+  def.para <- metar.para[id_para == para]
   if(all(is.na(x))){
     return(c(def.para$min, def.para$max))
   }
@@ -92,20 +94,15 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
   dt.time$icao <- dat$icao[1]
   dat <- dat[dt.time, on = c("time", "icao")]
 
-  # Station meta data
-  dat.stn <- read_station(fi.icao = dat$icao[1])
-
-  # Basic data validation
-  dat[, fx := fifelse(fx > ff*5, NA_real_, fx)] # Gust factor > 5
-  dat[, td := fifelse(td > tt, NA_real_, td)] # Dew point > temperature
-
-
   # Average time interval
   dt <- as.numeric(stats::median(diff(dat$time), na.rm = TRUE), "secs")
+  time.ticks <- pretty(dat$time, 11)
 
   # Layout
   fill.alpha <- 0.2
-  title <- sprintf("%s | %s | %s | %1.0fm | \U03BB %1.2f\U00B0 \U03A6 %1.2f\U00B0", dat.stn$icao, dat.stn$name, dat.stn$ctry, dat.stn$z, dat.stn$x, dat.stn$y)
+  sub.cex <- .9*cex
+  title <- sprintf("%s | %s | %s | %1.0fm | \U03BB %1.2f\U00B0 \U03A6 %1.2f\U00B0",
+    dat$icao[1], dat$ap_name[1], dat$ctry[1], dat$elev[1], dat$lon[1], dat$lat[1])
   mat <- matrix(1:5, 5, 1, byrow = TRUE)
 
   # Plot
@@ -118,8 +115,8 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
   graphics::mtext(title, side = 3, line = 0, cex = cex*1.3, font=2, adj = 0, xpd = TRUE)
   graphics::mtext(sprintf("METARgram: https://github.com/m-saenger/metar\n%s", attribution), side = 3, line = 0, cex=cex*.8, font=1, adj = 1, xpd = TRUE)
 
-  graphics::par(mai = c(0.1, 0.5, 0.3, 0.1)*cex, cex = cex, cex.lab = cex, cex.axis = cex*.9, cex.main = cex*1.1,
-                mgp = c(2, .5, 0)/cex, tcl = -0.3*cex)
+  graphics::par(mai = c(0.1, 0.5, 0.3, 0.1)*cex, cex = cex, cex.lab = cex, cex.axis = cex*.9, cex.main = cex*1.0,
+                mgp = c(2, .5, 0)/cex, tcl = -0.25*cex)
 
 
   # Temperature/Dew point
@@ -141,7 +138,7 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
       col = set_alpha(dt.rh$col, .3), lty = 0)
   graphics::grid(nx = NA, ny = NULL)
   graphics::axis(2, las = 2)
-  graphics::axis.POSIXct(1, x = dat$time, tck=1, labels = FALSE, lty = "dotted", col = "lightgray")
+  graphics::axis.POSIXct(1, dat$time, time.ticks, tck=1, lty = "dotted", col = "lightgray", labels = FALSE)
   graphics::lines(dat$time, dat$tt, type = "l", lty = 1)
   graphics::lines(dat$time, dat$td, type = "l", lty = 1, col = "dodgerblue2")
   graphics::box()
@@ -156,9 +153,9 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
   title.col <-  c("black", "black", "dodgerblue2")
   title.2.txt <- c("Wind Dir: ", "North", "Northeast", "East", "Southeast", "South", "Southwest", "West", " Northwest")
   title.2.col <-  c("black", wind.pal[seq(0, 315, 45)+1])
+  ylim <- range(get_range(dat$ff, "ff"), get_range(dat$fx, "fx"))
 
-
-  plot(dat$time, dat$ff, ylim = range(c(dat$ff, dat$fx), na.rm = TRUE), type = "n", ann = FALSE,  xaxs="i", yaxt = "n", xaxt = "n")
+  plot(dat$time, dat$ff, ylim = ylim, type = "n", ann = FALSE,  xaxs="i", yaxt = "n", xaxt = "n")
   ylim <- c(graphics::par("usr")[3], graphics::par("usr")[4])
   multicolor.title(title.txt, title.col, adj = 0, line = .70, font = 2)
   multicolor.title(title.2.txt, title.2.col, collapse = " ", adj = 1, line = .70, font = 2)
@@ -166,7 +163,7 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
       col = set_alpha(dat.wind$col, fill.alpha), lty = 0)
   graphics::grid(nx = NA, ny = NULL)
   graphics::axis(2, las = 2)
-  graphics::axis.POSIXct(1, x = dat$time, tck=1, labels = FALSE, lty = "dotted", col = "lightgray")
+  graphics::axis.POSIXct(1, dat$time, time.ticks, tck=1, lty = "dotted", col = "lightgray", labels = FALSE)
   graphics::lines(dat$time, dat$ff, type = "l", lty = 1)
   graphics::points(dat$time, dat$fx, pch = "+", col = "dodgerblue2")
   graphics::box()
@@ -191,36 +188,45 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
       col = set_alpha(dt.p$col, 1), lty = 0)
   graphics::grid(nx = NA, ny = NULL)
   graphics::axis(2, las = 2)
-  graphics::axis.POSIXct(1, x = dat$time, tck=1, labels = FALSE, lty = "dotted", col = "lightgray")
+  graphics::axis.POSIXct(1, dat$time, time.ticks, tck=1, lty = "dotted", col = "lightgray", labels = FALSE)
   graphics::lines(dat$time, dat$qnh, type = "l")
   graphics::box()
 
-  # Vis /Signif Weather
-  cond <- c(is_storm = "orange", TS = "red", is_sandstorm = "maroon", is_solid = "magenta", is_liquid = "dodgerblue2", FG = "#888888", ctrl = NA_character_)
-  dat$ctrl <- 1
-  dat.pw <- dat[,  .(time, pw, pw_col = cond[apply(sapply(.SD, function(i) (i == 1)*1), 1, which.max)]), .SDcols = names(cond)]
 
-  title.1.txt <- c("Visibility [km]: ", "Meteorological | ", "Vertical (+)")
+  # Vis /Signif Weather
+  dt.sigwx <- metar.class[id_para == "sigwx"][c(1:8)]
+  sigwx.id <- dt.sigwx$id_class
+  sigwx.name <- dt.sigwx$short_class
+  sigwx.col <- dt.sigwx$col
+  sigwx.cond <- c(setNames(sigwx.col, sigwx.id))
+
+  dat$ctrl <- 1
+  dat.pw <- dat[,  .(time, pw, pw_col = sigwx.col[match(SIGWX, sigwx.id)])]
+
+  title.1.txt <- c("Visibility [km]: ", "Meteorological | ", "Vertical [100 ft] (+)")
   title.1.col <-  c("black", "black", "dodgerblue2")
-  title.2.txt <- c("Significant Weather: ", " Fog", " Liquid", " Solid", " Sandstorm", " Thunderstorm", " Storm")
-  title.2.col <-  c("black", "#888888", "dodgerblue2", "magenta", "maroon", "red", "orange")
+
+  title.2.txt <- c("Sig. Weather: ", paste0(" ", sigwx.name))
+  title.2.col <-  c("black", sigwx.col)
 
   graphics::par(mai = c(0.3, 0.5, 0.4, 0.1)*cex)
-  plot(dat$time, dat$vis, ylim = c(0.1, 25), type = "n", ann = FALSE, log = "y",  xaxs="i", yaxt = "n")
+  plot(dat$time, dat$vis, ylim = c(0.1, 25), type = "n", ann = FALSE, log = "y",  xaxs="i", yaxt = "n", xaxt = "n")
   multicolor.title(title.1.txt, title.1.col, adj = 0, line = .70, font = 2)
   multicolor.title(title.2.txt, title.2.col, adj = 1, line = .70, font = 2)
   # Weather
   ylim <- 10^c(graphics::par("usr")[3], graphics::par("usr")[4])
   graphics::rect(xleft = dat.pw$time, xright = shift(dat.pw$time, type = "lag"), ybottom = ylim[1], ytop = ylim[2],
-                 col = set_alpha(dat.pw$pw_col, 0.3), lty = 0)
+                 col = set_alpha(dat.pw$pw_col, 0.75), lty = 0)
   graphics::grid(nx = NA, ny = NULL)
-  graphics::axis.POSIXct(1, dat$time, tck=1, lty = "dotted", col = "lightgray")
-  graphics::axis(2, c(100, 300, 1000, 3000, 10000)/1e3, tck=1, las = 2, lty = "dotted", col = "lightgray")
+  graphics::axis.POSIXct(1, dat$time, time.ticks, tck=1, lty = "dotted", col = "lightgray")
+  graphics::axis(2, c(100, 300, 1000, 3000, 10000)/1e3, tick = TRUE, las = 2, col.ticks	= "black")
+  abline(h = c(100, 300, 1000, 3000, 10000)/1e3, lty = 3, col = "lightgray")
   graphics::lines(dat$time, dat$vis/1e3, type = "s")
-  graphics::points(dat$time, dat$vvis/1e3, pch = "+", col = "dodgerblue2")
+  graphics::points(dat$time, dat$vvis/1e2, pch = "+", col = "dodgerblue2")
   graphics::box()
 
   graphics::par(def.par)  #- reset to default
 
 }
-
+# extrafont::loadfonts(device = "win")
+# extrafont::fonts()

@@ -4,18 +4,17 @@
 \alias{metar_pw}
 \title{Parse a METAR PW groups}
 \usage{
-metar_pw(pw)
+metar_pw(pw, DC = FALSE, PH = FALSE)
 }
 \arguments{
 \item{pw}{METAR PW string}
+
+\item{DC}{Add descriptor cross table}
+
+\item{PH}{Add phenomenon cross table}
 }
 \description{
 Parse a METAR PW groups
-}
-\examples{
-metar_pw(pw = "+TSRA BR VCTS")
-metar_pw(pw = parse_metar(metar.test)$pw)
-
 }
 \author{
 M. Saenger

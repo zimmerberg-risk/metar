@@ -7,9 +7,9 @@
 #' @export
 #' @examples
 #'  parse_metar(x = "LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG")
-#'  parse_metar(x = metar.test)
+#'  parse_metar(x = metar.test$code)
 #'
-parse_metar <- function(x, date = NULL){
+parse_metar <- function(x, date){
 
   if(length(x) == 0){
     warning("No data found - returning empty data table")
@@ -18,15 +18,17 @@ parse_metar <- function(x, date = NULL){
 
   icao <- str_extract(x, "(?<=COR|METAR|\\s|^)\\b([A-Z0-9]{4})\\b")
 
-  if(is.null(date)){
+  if(missing(date)){
     time <-  as.POSIXct(strptime(x = paste0(format(Sys.Date(), "%Y"), format(Sys.Date(), "%m"), str_extract(x, "([0-9]{6})(?=Z)")), format = "%Y%m%d%H%M", tz = "UTC"))
   } else {
     time <- as.POSIXct(format(date), tz = "UTC")
   }
 
   # Meta data
-  metar <- trimws(str_extract(x, "(?<=^[A-Z0-9]{4}\\s[0-9]{6}Z\\s)(.*?)(?=RMK|BECMG|TEMPO|$)"))
-  rmk <- trimws(str_extract(x, "(?<=RMK )(.*?)(?=BECMG|TEMPO|$)"))
+  dt.stn <- metar_stn(id.icao = icao)
+
+  metar <- str_trim(str_extract(x, "(?<=^[A-Z0-9]{4}\\s[0-9]{6}Z\\s)(.*?)(?=RMK|BECMG|TEMPO|$)"))
+  rmk <- str_trim(str_extract(x, "(?<=RMK )(.*?)(?=BECMG|TEMPO|$)"))
   cor <- grepl("\\bCOR\\b", x)*1
   speci <- grepl("\\bSPECI\\b", x)*1
   auto <-  grepl("\\bAUTO\\b", x)*1
@@ -42,15 +44,16 @@ parse_metar <- function(x, date = NULL){
   colnames(wind.var) <- c("dir_from", "dir_to")
 
   # Meteorological, vertical and runway visibility
-  regex.vis <- "\\b([0-9]{4}|[0-9]{1,2}(?=KM)|[0-9]{1,2}\\s[0-9]{1}\\/[0-9]{1}(?=SM)|[0-9]{1}\\/[0-9]{1}(?=SM)|(?!<\\/)[0-9]{1,2}(?=SM))(SM|KM)?(NDV)?\\b"
+  regex.vis <- "\\b([0-9]{4}|[0-9]{1,2}(?=KM)|[0-9]{1,2}\\s[0-9]{1}\\/[0-9]{1}(?=SM)|[0-9]{1}\\/[0-9]{1,2}(?=SM)|(?!<\\/)[0-9]{1,2}(?=SM))(SM|KM)?(NDV)?\\b"
   vis <- rbind(str_match(metar, regex.vis)[,-1])
   colnames(vis) <- c("vis", "vis_unit", "ndv")
+  # Parse fractions
+  vis[,1] <- sapply(str_replace(vis[,1], "\\s", "\\+0*"), function(i) eval(parse(text = i)) )
 
   regex.vis.min <- "\\s([0-9]{4})(N|NE|E|SE|S|SW|W|NW)\\s"
   vis.min <- rbind(str_match(metar, regex.vis.min)[,-1])
   colnames(vis.min) <- c("min_vis", "min_vis_dir")
 
-  #regex.rvr <- "(R([0-9\\/CRL]{2,3})\\/(P|P|M|\\/)?([0-9\\/]{4})(D|U|N)?V?(VP|P|M)?([0-9]{4})?(FT|D|U|N)?){1,4}"
   regex.rvr <- "((R([0-9\\/CRL]{2,3})\\/(P|P|M|\\/)?([0-9\\/]{4})(D|U|N)?V?(VP|P|M)?([0-9]{4})?(FT|D|U|N)?){1,4})"
   rvr <- cbind(sapply(str_extract_all(metar, regex.rvr), paste, collapse = " "))
   colnames(rvr) <- c("rvr")
@@ -64,15 +67,21 @@ parse_metar <- function(x, date = NULL){
   cld <- cbind(sapply(str_extract_all(metar, regex.cld), paste, collapse = " "))
   colnames(cld) <- c("cld")
 
-  # Present weather
-  regex.pw <- sprintf("(\\+|\\-|VC|RE)?(%s)?((?:%s){1,3})", paste(pw.dc, collapse = "|"), paste(pw.ph, collapse = "|"))
-  pw <- cbind(sapply(str_extract_all(metar, regex.pw), paste, collapse = " "))
-  colnames(pw) <- c("pw")
+  # Present weather (up to 4 PW groups (US))
+  regex.dc.ph <- paste(c(metar.dc$id_dc, metar.ph$id_ph), collapse = "|")
+  regex.pw <- sprintf("((?:\\+|\\-)?\\b(?:VC|RE)?(?:%s){1,4}\\b\\s?){1,4}", regex.dc.ph)
+  pw <- trimws(str_match(metar, regex.pw)[,1])
+
+  # regex.dc <- paste(metar.dc$id_dc, collapse = "|")
+  # regex.ph <- paste(metar.ph$id_ph, collapse = "|")
+  # regex.pw <- sprintf("((\\+|\\-|VC|RE)?(%s)?((?:%s){1,4})\\b)+", regex.dc, regex.ph)
+  # pw <- cbind(sapply(str_extract_all(metar, regex.pw), paste, collapse = " "))
+  # colnames(pw) <- c("pw")
 
   # Temperature/dew point
   regex.tttd <- "\\s(M)?([0-9]{2})/(M)?([0-9]{2})?\\s"
   tttd <- rbind(str_match(metar, regex.tttd)[,-1])
-  colnames(tttd) <-c("tt_sign", "tt", "td_sign", "td")
+  colnames(tttd) <-c("tt_unit", "tt", "td_unit", "td")
 
   # Pressure
   regex.qnh <- "(Q|A)([0-9]{4})"
@@ -88,155 +97,247 @@ parse_metar <- function(x, date = NULL){
   dt <- as.data.table(cbind(icao, time, speci, auto, cor, wx, wind, wind.var, vis, vis.min, rvr, vvis,
     cld, tttd, pw, qnh, ws, metar, rmk))
 
+  # Wind calm -> no wind dir
+  dt[dir == "000", `:=`(dir = NA_real_)]
+
   # Assign class and default value
-  void <- lapply(intersect(names(dt), names(metar.vars)), function(i){
-    var.name <- i
-    type <- metar.vars[[i]]$type
-    fct <- ifelse(type != "POSIXct", paste("as", metar.vars[[i]]$type, sep = "."), "c") # Protect POSIXct (as.POSIXct fails)
-    default <- metar.vars[[var.name]]$default
-    suppressWarnings(dt[, (var.name) := lapply(.SD, fct), .SDcols = c(var.name)])
-    dt[is.na(dt[[var.name]]) & !is.null(default), (var.name) := default]
+  para.list <- setdiff(intersect(names(dt), metar.para$id_para), "time")
+
+  void <- lapply(para.list[], function(i){
+    def <- metar.para[id_para == i]
+    # Convert type
+    suppressWarnings(dt[, (i) := do.call(paste0("as.", def$type_para), list(dt[[i]]))])
+    # Set defaults
+    dt[is.na(dt[[def$id_para]]) & !is.na(def$unit_str), (def$id_para) := def$unit_str]
   })
 
   # Covert time to POSIXct
   dt[, time := as.POSIXct(as.integer(time), origin = "1970-01-01", tz = "UTC")]
 
   # Convert units
-  wind.conversion <- list(KT = 1, MPH = 0.868976, MPS = 1.94384) # to knots
-  vis.conversion <- list(KM = 1000, M = 1, SM = 1609.344) # to meters,  (statute miles)
-  qnh.conversion <- list(Q = 1, A = 1/2.953)
-  tt.conversion <- list(M = -1, P = 1)
+  para.list.conv <- split(metar.para_conv, by = "id_para")
+  void <- lapply(names(para.list.conv), function(i){
+    def <- para.list.conv[[i]]
+    unit <- dt[[paste(i, "unit", sep = "_")]]
+    scale <- def$scale[match(unit, def$id_unit_para)]
+    offset <- def$offset[match(unit, def$id_unit_para)]
+    dt[, c(i) := get(i) * scale + offset]
+  })
 
-  # Assign conversion factors
-  dt[, wind_factor := unlist(wind.conversion[ff_unit])]
-  dt[, vis_factor := unlist(vis.conversion[vis_unit])]
-  dt[, qnh_factor := unlist(qnh.conversion[qnh_unit])]
-  dt[, tt_factor := unlist(tt.conversion[tt_sign])]
-  dt[, td_factor := unlist(tt.conversion[td_sign])]
-
-  # Calculate
-  dt[, `:=`(ff = ff*wind_factor, fx = fx*wind_factor, qnh = qnh*qnh_factor, tt = tt*tt_factor, td = td*td_factor,
-            vis = unlist(lapply(str_replace(vis, "\\s", "\\+0*"), function(i) eval(parse(text = i))))*vis_factor)]
+  # Processing
   dt[, `:=`(vis = data.table::fifelse(`%in%`(wx, "CAVOK"), 9999, vis))]
   dt[, `:=`(cld = data.table::fifelse(`%in%`(wx, c("NCD", "NSC", "SKC")), wx, cld))]
   dt[, `:=`(cld = data.table::fifelse(!`%in%`(vvis, NA), "IMC", cld))]
   dt[, `:=`(vvis = vvis*1e2)]
 
   # Drop auxiliary data columns
-  drop.col <-  c(names(metar.vars)[unname(sapply(metar.vars, '[[', "drop")) == F])
-  dt[, .SD, .SDcols = intersect(names(dt), drop.col)]
-  dt
+  cols.drop <- intersect(names(dt), metar.para[drop == TRUE]$id_para)
+  dt[, (cols.drop) := NULL]
 
+  merge(dt.stn[, .(icao, ctry, ap_name, lon, lat, elev)], dt, by = "icao", all = TRUE)
 }
-# x <- metar_latest(id_icao = "")
-# dat <- parse_metar(x)
-# dat[order(-fx)]
+
+#' Parse METAR reports
+#'
+#' @author M. Saenger
+#' @description Parse a METAR report
+#' @param x METAR strings
+#' @param date date
+#' @export
+#' @examples
+#'  parse_metar(x = "LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG")
+#'  parse_metar(x = metar.test$code)
+#'
+metar_parse <- function(x, date){
+  parse_metar(x, date)
+}
+
+#' Validate METAR
+#'
+#' @author M. Saenger
+#' @description Validate METAR reports
+#' @param dat Output from `metar_parse`
+#' @param set.na set NA if validation fails
+#' @export
+#'
+metar_validate <- function(dat, set.na = TRUE){
+
+  dat$flag <- ""
+  cat("Validation failed:\n")
+
+  # Parameter data validation
+  para.list <- intersect(names(dat), metar.para[!is.na(min)]$id_para)
+
+  res <- lapply(para.list, function(i){
+    para.range <- metar.para[id_para == i, c(min, max)]
+
+    # Parameter range
+    check <- !between(dat[[i]], para.range[1], para.range[2])
+    if(i == "fx") check <- check | (dat$fx > dat$ff * 5) # Gust factor > 5
+    if(i == "td") check <- check | (dat$td > dat$tt) # Dew point > temperature
+
+    ind <- which(check)
+
+    if(length(ind) > 0){
+      dat[ind, flag := paste(flag, i, sep = ",")] # Flag
+
+      # Log
+      str <- dat[ind, paste("para=", i, " value=", get(i), " ", icao, " ", ctry, " ", metar, sep = "")]
+      cat(str, sep = "\n")
+      if(set.na) dat[[i]][ind] <- NA_real_ # Set NA
+    }
+  })
+  dat[order(-flag)]
+  dat
+}
 
 #' Parse a METAR PW groups
 #'
 #' @author M. Saenger
 #' @param pw METAR PW string
+#' @param DC Add descriptor cross table
+#' @param PH Add phenomenon cross table
 #' @export
-#' @examples
-#' metar_pw(pw = "+TSRA BR VCTS")
-#' metar_pw(pw = parse_metar(metar.test)$pw)
 #'
-metar_pw <- function(pw){
+metar_pw <- function(pw, DC = FALSE, PH = FALSE){
   # Debug
-  # pw <- c(NA, "RERASN", "RADZ VCSH RERA", "SNRA +SNDZ SHRADZ", "FZRA VCFG", "", "MIFG BR", "BLSN", "VCTS", "+TS", "-RA FZFG", "+TSSHRA", "VCTS +RA BR", "MIFG")
+  # pw <- c(NA, "VCSH SHSN RERASN", "RADZ VCSH RERA RESH", "SNRA +SNDZ SHRADZ", "FZRA VCFG", "", "MIFG BR", "BLSN", "VCTS", "+TS", "-RA FZFG", "+TSSHRA", "VCTS +RA BR", "MIFG")
 
-  dt.pw <- data.table(pw)
-  dt.pw[, `:=`(id = .I, recent = str_extract(pw, "(?<=RE)([A-Z]+)\\b"), pw = str_remove(pw, "(\\s)?RE[A-Z]+\\b"))]
-  setkey(dt.pw, id)
+  n <- length(pw)
 
-  # Lookup
-  dt.ph.lut <- rbindlist(metar.ph, idcol = "ph")[ph != "NSW"]
+  # Split into PW (Current), RE (Recent) and VC (Vicinity)
+  re <- trimws(str_match(pw, "(\\bRE[:alpha:]+\\b\\s?){1,2}")[,1])
+  vc <- trimws(str_match(pw, "(\\bVC[:alpha:]+\\b\\s?){1,2}")[,1])
+  pw <- trimws(str_remove_all(pw, "\\b(?:RE|VC)[:alpha:]+\\b"))
 
-  # Summary
-  m <- str_match_all(dt.pw$pw, sprintf("(\\+|\\-)?(VC)?(%s)?((?:%s){1,3})", paste(pw.dc, collapse = "|"), paste(pw.ph, collapse = "|")))
-  dt.res <- data.table(id = 1:length(m))
-  dt.res <- rbindlist(lapply(m, as.data.frame), idcol = "id")[dt.res, on = "id"]
-  setnames(dt.res, new = c("id", "pw_grp",  names(metar.vars.pw)))
+  # PW classes
+  pw.regex <- list(
+    GR = "GR",
+    TS = "TS|FC|SQ",
+    ST = "DS|SS|PO",
+    FZ = "FZ",
+    PP_HEAVY = sprintf("\\+[:alpha:]+(?:%s)", paste(metar.ph[id_ph_subgrp %in% c("SOLID", "LIQUID")]$id_ph, collapse = "|")),
+    PP_SOLID = paste(metar.ph[id_ph_subgrp == "SOLID"]$id_ph, collapse = "|"),
+    PP_LIQUID = sprintf("SH\\b|%s", paste(metar.ph[id_ph_subgrp == "LIQUID"]$id_ph, collapse = "|")),
+    FG = "(?<!MI|PR|BC)FG",
+    FZ_PP = "FZ(?!FG)",
+    FZ_FG = "FZFG",
+    FG_any = "FG",
+    PP = "RA|DZ",
+    SH = "SH"
+  )
+  re.regex <- pw.regex[c("TS", "SH", "PP")]
+  vc.regex <- pw.regex[c("TS", "SH", "ST", "FG")]
 
-  dt.res[, id_pw_grp := 1:.N, id]
-  dt.res <- data.table::dcast(dt.res, id ~ id_pw_grp, value.var = c("pw_grp",  names(metar.vars.pw)))
+  dt.pw <- as.data.table(lapply(pw.regex, str_extract, string = pw))
 
-  # Phenomena (exlucde RExx and VCxx)
-  ph.match <- str_match_all(dt.pw$pw, sprintf("((?<!VC|RE)%s)", paste(pw.ph, collapse = ")|(?<!VC|RE)(")))
+  # Mixed precipitation (solid & liquid)
+  dt.pw[, PP_MIXED := ifelse(!is.na(PP_SOLID) & !is.na(PP_LIQUID), paste0(PP_SOLID, PP_LIQUID), NA_character_)]
+
+  # Recent/vicinity
+  dt.re <- as.data.table(lapply(re.regex, str_extract, string = re))
+  setnames(dt.re, paste("re", names(re.regex), sep = "_"))
+  dt.vc <- as.data.table(lapply(vc.regex, str_extract, string = vc))
+  setnames(dt.vc, paste("vc", names(vc.regex), sep = "_"))
+
+  # PW group
+  pw.grp.match <- str_match_all(pw[], "([\\+|\\-[:alpha:]]+)")
+  dt.pw.grp <- data.table(id = rep(seq_along(pw.grp.match), sapply(pw.grp.match, nrow)), pw_grp = do.call(rbind, pw.grp.match)[,1])
+  dt.pw.grp[, `:=`(num_pw_grp = paste("pw_grp", seq_along(.I), sep = "_")), .(id)]
+
+  xt.pw.grp <- dcast(dt.pw.grp, id ~ num_pw_grp, value.var = "pw_grp")
+
+  # Merge
+  dt.pw <- cbind(id = seq_along(pw), pw, re, vc, dt.pw, dt.re, dt.vc)
+  dt.pw <- merge(dt.pw, xt.pw.grp, by = "id", all.x = TRUE)
+  setorder(dt.pw, id)
+  setcolorder(dt.pw, c("pw", names(xt.pw.grp)))
+
+  # Significant weather GR > TS > ST > FZ > PP_HEAVY > PP_SOLID > PP_LiQUID > FG > vc_TS > vc_FG
+  dt.pw[, NOSIG := 1]
+  sig.wx <- c("GR", "TS", "ST", "FZ", "PP_HEAVY", "PP_SOLID", "PP_LIQUID", "FG", "vc_TS", "vc_FG", "re_TS", "re_PP", "NOSIG")
+  dt.pw[, SIGWX := sig.wx[apply(!is.na(as.matrix(.SD)), 1, which.max)], .SDcols = sig.wx]
+
+  dt.pw[SIGWX!="NOSIG"]$SIGWX
+
+  dt.comb <- dt.pw
+
+  ## ------------------------- PH / DC --------------------------------
+
+  # Phenomena matrix (exclude VCxx)
+  ph.match <- str_match_all(pw, sprintf("(%s)", paste(metar.ph$id_ph, collapse = ")|(")))
   ph.matrix <- lapply(ph.match, function(i) (!is.na(i))*1)
   ph.sums <- (do.call(rbind, lapply(ph.matrix, colSums)) > 0)*1
   dt.ph <- data.table(ph.sums[,-1, drop = FALSE])
-  setnames(dt.ph, pw.ph)
+  setnames(dt.ph, paste("PH", metar.ph$id_ph, sep = "_"))
 
-  # VC Phenomena
-  vc.match <- str_match_all(dt.pw$pw, sprintf("((?<=VC)%s)", paste(pw.ph, collapse = ")|(?<=VC)(")))
-  vc.matrix <- lapply(vc.match, function(i) (!is.na(i))*1)
-  vc.sums <- (do.call(rbind, lapply(vc.matrix, colSums)) > 0)*1
-  dt.vc <- data.table(vc.sums[,-1, drop = FALSE])
-  setnames(dt.vc, paste0("VC_", pw.ph))
 
   # Descriptor
-  dc.match <- str_match_all(dt.pw$pw, sprintf("((?<!VC)%s)", paste(pw.dc, collapse = ")|(?<!VC)(")))
+  dc.match <- str_match_all(pw, sprintf("(%s)", paste(metar.dc$id_dc, collapse = ")|(")))
   dc.matrix <- lapply(dc.match, function(i) (!is.na(i))*1)
   dc.sums <- (do.call(rbind, lapply(dc.matrix, colSums)) > 0)*1
   dt.dc <- data.table(dc.sums[,-1, drop = FALSE])
-  setnames(dt.dc, pw.dc)
-  setnames(dt.dc, c("SH", "TS"), c("dc_SH", "dc_TS"))
+  setnames(dt.dc, paste("DC", metar.dc$id_dc, sep = "_"))
 
-
-  # Combine
-  dt.comb <- cbind(dt.pw, dt.ph, dt.vc, dt.dc)
-  dt.comb[, id := .I]
-  dt.comb <- merge(dt.res, dt.comb, by = "id", all.y = TRUE)
-
-  # Derivatives
-  dt.comb[, `:=`(is_pp = do.call(pmax,.SD)), .SDcols = dt.ph.lut[type == "Precipitation"]$ph]
-  dt.comb[, `:=`(is_obsc = do.call(pmax,.SD)), .SDcols = dt.ph.lut[type == "Obscuration"]$ph]
-  dt.comb[, `:=`(is_liquid = do.call(pmax,.SD)), .SDcols = dt.ph.lut[subtype == "Liquid"]$ph]
-  dt.comb[, `:=`(is_solid = do.call(pmax,.SD)), .SDcols = dt.ph.lut[subtype == "Solid"]$ph]
-  dt.comb[, `:=`(is_sandstorm = do.call(pmax,.SD)), .SDcols = dt.ph.lut[group == "Sand-/Duststorm"]$ph]
-  dt.comb[, `:=`(is_storm = do.call(pmax,.SD)), .SDcols = dt.ph.lut[group == "Storm/Hail" & ph != "TS"]$ph]
-
-  dt.comb[, `:=`(int = str_extract(pw, "([\\+\\-])"))]
-  dt.comb[, `:=`(int = fifelse(int == "+", 3, fifelse(int == "-", 1, 2)))]
-  dt.comb[, `:=`(is_mixed = (is_liquid * is_solid))]
-  dt.comb[, `:=`(pw = NULL)][]
+  if(DC) dt.comb <- cbind(dt.comb, dt.dc)
+  if(PH) dt.comb <- cbind(dt.comb, dt.ph)
 
   dt.comb
 }
 
-#' Parse a METAR cloud groups
+# code <- metar_latest(id_icao = "", report.hour = 6)
+# dat <- metar_parse(x = code)
+# x <- dat$pw
+#
+# dt.pw <- metar_pw(pw = x, DC = F, PH = F)
+# dt.comb <- cbind(dat, dt.pw)
+# dt.comb[!is.na(re)]
+#
+# unique(dt.comb$pw)
+# unique(dt.comb$pw_grp_1)
+# unique(dt.comb$pw_grp_2)
+# unique(dt.comb$re)
+# unique(dt.comb$vc)
+#
+# readr::write_excel_csv(dt.comb, "C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/Data/metar/pw_test.csv", na = "", quote_escape = "double")
+#
+
+
+  #' Parse a METAR cloud groups
 #'
 #' @author M. Saenger
 #' @param cld METAR cloud string
 #' @export
 #' @examples
-#'  metar_clouds(cld = c("FEW030 FEW032TCU SCT050 BKN075", "SCT050 SCT075 OVC149", "", "SCT003"))
+#' metar_clouds(cld = c("FEW030 FEW032TCU SCT050 BKN075", "SCT050 SCT075 OVC149", "", "SCT003"))
 #'
 metar_clouds <- function(cld){
+  metar.vars.cld <- metar.para[parent_para == "cld" & id_para != "cld_octa"]
+  cld.amt <- metar.class[id_para == "cld_amt"]
+
   dt.1 <- data.table(cld)
   dt.1[, `:=`(id = .I)]
   setkey(dt.1, id)
 
   m <- str_match_all(dt.1$cld, "(FEW|SCT|BKN|OVC|[\\/]{3})([0-9]{3}|[\\/]{3})([A-Z]{2,3}|\\/\\/\\/)?")
   dt.cld <- data.table(do.call(rbind, m))
-  setnames(dt.cld, c(names(metar.vars.cld)))
+  setnames(dt.cld, c(metar.vars.cld$id_para))
   dt.cld$id <- rep(seq_along(m), sapply(m, nrow))
   dt.cld[, cld_level := seq_len(.N), id][order(id, cld_level)]
 
-  void <- lapply(names(metar.vars.cld), function(i){
-    fct <- paste("as", metar.vars.cld[[i]]$type, sep = ".")
+  void <- lapply(seq_along(metar.vars.cld$id_para), function(i){
+    fct <- paste("as", metar.vars.cld[i]$type, sep = ".")
     dt.cld[, (i) := lapply(.SD, fct), .SDcols = c(i)]
   })
-  dt.cld[, cld_hgt := cld_hgt * 1e2]
+  dt.cld[, cld_height := cld_height * 1e2]
   setkey(dt.cld, id)
 
-  dt.ceil <- dt.cld[cld_amt %in% c("BKN", "OVC"), .(ceiling = min(cld_hgt)), id]
+  dt.ceil <- dt.cld[cld_amt %in% c("BKN", "OVC"), .(ceiling = min(cld_height)), id]
   setkey(dt.ceil, id)
-  dt.agg <- dt.cld[, .(cld_levels = max(cld_level), cld_hgt_min = min(cld_hgt), cld_hgt_max = max(cld_hgt),
-    cld_amt_max = cld.amt[max(match(cld_amt, cld.amt))], cld_amt_min = cld.amt[min(match(cld_amt, cld.amt))]), id]
+  dt.agg <- dt.cld[, .(cld_levels = max(cld_level), cld_hgt_min = min(cld_height), cld_hgt_max = max(cld_height),
+    cld_amt_max = cld.amt[max(match(cld_amt, cld.amt$id_class))]$id_class, cld_amt_min = cld.amt[min(match(cld_amt, cld.amt$id_class))]$id_class), id]
 
-  dt.cast <- data.table::dcast(dt.cld, id ~ cld_level, value.var = names(metar.vars.cld))
+  dt.cast <- data.table::dcast(dt.cld, id ~ cld_level, value.var = metar.vars.cld$id_para)
   setkey(dt.cast, id)
 
   dt <- Reduce(function(...) merge(..., all = TRUE), list(dt.1, dt.agg, dt.ceil, dt.cast))
@@ -252,6 +353,15 @@ metar_clouds <- function(cld){
 #' metar_rvr(rvr = "R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U")
 #'
 metar_rvr <- function(rvr){
+  metar.vars.rvr <- list(
+  rwy = list(name = "Runway", type = "character", drop = F),
+  rwr_min_exc = list(name = "RVR Min. Exceed.", type = "character", drop = F),
+  rvr_min = list(name = "RVR Min.", type = "integer", drop = F),
+  rwr_max_exc = list(name = "RVR Max Exceed.", type = "character", drop = F),
+  rvr_tend = list(name = "RVR Tendency", type = "character", drop = F),
+  rwr_max = list(name = "RVR Max.", type = "integer", drop = F),
+  rvr_unit = list(name = "RVR Unit", type = "character", drop = F)
+)
   m <- str_match_all(rvr, "(R([0-9\\/CRL]{2,3})\\/(P|P|M|\\/)?([0-9\\/]{4})(D|U|N)?V?(VP|P|M)?([0-9]{4})?(FT|D|U|N)?){1,4}")
   dt.rvr <- data.table::rbindlist(lapply(seq_along(m), FUN = function(i){
     dat <- rbind(m[[i]][,-1])

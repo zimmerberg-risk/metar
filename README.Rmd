@@ -11,7 +11,7 @@ knitr::opts_chunk$set(
   fig.path = "man/figures/README-",
   out.width = "100%",
   fig.width = 9,
-  fig.height = 6
+  fig.height = 6 
 )
 ```
 
@@ -32,7 +32,7 @@ Install the latest stable version from [GitHub](https://github.com/m-saenger/met
 
 ``` r
 # install.packages("devtools") 
-devtools::install_github("m-saenger/metar@0.3.1", upgrade = "never")
+devtools::install_github("m-saenger/metar@0.4.0", upgrade = "never")
 ```
 
 This package depends on **data.table**, **stringr**, **readr** and **lubridate**.
@@ -45,10 +45,10 @@ This package depends on **data.table**, **stringr**, **readr** and **lubridate**
 library(metar)
 
 ## read raw data from Mesonet website
-dat <- read_mesonet("LSZH", as.POSIXct("2021-03-15"), as.POSIXct("2021-03-28"))
+dat <- read_mesonet("LSZH", "2021-03-15", "2021-03-28")
 
 ## parse METAR code
-dat.parsed <- parse_metar(dat$metar, date = dat$valid)
+dat.parsed <- parse_metar(x = dat$metar, date = dat$valid)
 
 # Structure  (subset of columns)
 print(dat.parsed[1:10, .(metar, tt, qnh)])
@@ -60,8 +60,8 @@ print(dat.parsed[1:10, .(metar, tt, qnh)])
 ```{r Variable}
 
 library(data.table)
-vars <- data.table::rbindlist(metar.vars, fill = TRUE, idcol = "short_name")
-print(vars[, .(short_name, name)])
+# Structure  (subset of columns and rows)
+print(metar.para[1:10, .(id_para, name_para)])
 
 
 ```
@@ -86,9 +86,9 @@ dat.cld <- metar_clouds(dat.parsed$cl)
 dat.cld$time <- dat.parsed$time
 
 # Structure (subset of columns)
-print(dat.cld[1:10, .(time, cld_levels, cld_str_1 , cld_amt_1, cld_hgt_1, cld_type_1 )])
+print(dat.cld[1:10, .(time, cld_levels,  cld_1 , cld_amt_1, cld_height_1, cld_type_1 )])
 
-ggplot(dat.cld, aes(time, cld_hgt_1)) +
+ggplot(dat.cld, aes(time, cld_height_1)) +
   geom_path() +
   labs(title = "Altitude of Lowest Cloud Level at LSZH Airport") +
   theme_bw()
@@ -102,12 +102,12 @@ ggplot(dat.cld, aes(time, cld_hgt_1)) +
 dat.pw <- dat.parsed[, metar_pw(pw)]
 
 # Structure (subset of columns)
-print(dat.pw[1:10, .(pw_grp_1, pw_grp_2, is_pp, RA, SN, DZ, is_solid, is_liquid, is_mixed)])
+print(dat.pw[1:10, .(pw_grp_1, pw_grp_2, re, PP_SOLID, PP_LIQUID, SIGWX)])
 
 # Bind data
 dat.plot <- cbind(dat.parsed, dat.pw)
 
-plot_metargram(dat = dat.plot, cex = 0.8)
+plot_metargram(dat = dat.plot)
 
 
 ```

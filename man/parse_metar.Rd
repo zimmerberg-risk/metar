@@ -4,7 +4,7 @@
 \alias{parse_metar}
 \title{Parse METAR reports}
 \usage{
-parse_metar(x, date = NULL)
+parse_metar(x, date)
 }
 \arguments{
 \item{x}{METAR strings}
@@ -16,7 +16,7 @@ Parse a METAR report
 }
 \examples{
  parse_metar(x = "LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG")
- parse_metar(x = metar.test)
+ parse_metar(x = metar.test$code)
 
 }
 \author{

@@ -4,12 +4,14 @@
 \alias{metar_latest}
 \title{Get METARs from NOAA cycle files}
 \usage{
-metar_latest(id_icao = NULL, latest = TRUE)
+metar_latest(id_icao = NULL, latest.only = TRUE, report.hour = NULL)
 }
 \arguments{
-\item{id_icao}{Lorem Ipsum}
+\item{id_icao}{ICAO identifiery, e. g. YSSY}
 
-\item{latest}{Lorem Ipsum}
+\item{latest.only}{latest report per aiport only}
+
+\item{report.hour}{specific reporting hour (last 24h)}
 }
 \description{
 metar_latest(id_icao = "LSZH")

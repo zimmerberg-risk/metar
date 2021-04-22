@@ -6,7 +6,7 @@ library(available)
 
 #' https://usethis.r-lib.org/articles/articles/usethis-setup.html
 #' https://happygitwithr.com/ssh-keys.html
-#'
+
 package.name <- "metar"
 
 available(package.name)
@@ -26,23 +26,15 @@ use_r(package.name)
 use_test(package.name)
 usethis::use_ccby_license()
 usethis::use_namespace(roxygen = TRUE)
-
+usethis::use_news_md()
 
 # before checks/install
 usethis::use_data_table()
 
 
-devtools::load_all()
+devtools::load_all(reset = TRUE)
 usethis:::use_data(
-  metar.vars,
-  metar.vars.pw,
-  metar.vars.cld,
-  metar.vars.rvr,
-  metar.test,
-  pw.dc,
-  pw.ph,
-  metar.ph,
-  cld.amt,
+  metar.src,
   internal=FALSE, overwrite=TRUE
 )
 devtools::document()
@@ -50,9 +42,9 @@ devtools::check()
 # devtools::build_readme()
 
 
-p <- devtools::build()
 detach("package:metar", unload = TRUE)
 remove.packages("metar")
+p <- devtools::build()
 devtools::install_local(p, force = TRUE, upgrade = "never")
 library(metar)
 

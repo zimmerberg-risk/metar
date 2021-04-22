@@ -22,7 +22,7 @@ Install the latest stable version from
 
 ``` r
 # install.packages("devtools") 
-devtools::install_github("m-saenger/metar@0.3.1", upgrade = "never")
+devtools::install_github("m-saenger/metar@0.4.0", upgrade = "never")
 ```
 
 This package depends on **data.table**, **stringr**, **readr** and
@@ -36,10 +36,10 @@ This package depends on **data.table**, **stringr**, **readr** and
 library(metar)
 
 ## read raw data from Mesonet website
-dat <- read_mesonet("LSZH", as.POSIXct("2021-03-15"), as.POSIXct("2021-03-28"))
+dat <- read_mesonet("LSZH", "2021-03-15", "2021-03-28")
 
 ## parse METAR code
-dat.parsed <- parse_metar(dat$metar, date = dat$valid)
+dat.parsed <- parse_metar(x = dat$metar, date = dat$valid)
 
 # Structure  (subset of columns)
 print(dat.parsed[1:10, .(metar, tt, qnh)])
@@ -61,42 +61,19 @@ print(dat.parsed[1:10, .(metar, tt, qnh)])
 ``` r
 library(data.table)
 #> Warning: package 'data.table' was built under R version 4.0.4
-vars <- data.table::rbindlist(metar.vars, fill = TRUE, idcol = "short_name")
-print(vars[, .(short_name, name)])
-#>      short_name                   name
-#>  1:       metar                  METAR
-#>  2:         cor             Correction
-#>  3:        icao                   ICAO
-#>  4:        time                   Time
-#>  5:        auto                   AUTO
-#>  6:         dir              Wind Dir.
-#>  7:          ff             Wind Speed
-#>  8:          fx             Wind Gusts
-#>  9:     ff_unit              Wind Unit
-#> 10:    dir_from         Var. Wind From
-#> 11:      dir_to           Var. Wind To
-#> 12:         vis             Visibility
-#> 13:    vis_unit              Vis. Unit
-#> 14:         ndv                    NVD
-#> 15:     min_vis              Min. Vis.
-#> 16: min_vis_dir         Min. Vis. Dir.
-#> 17:         cld           Cloud Groups
-#> 18:         rvr             RVR Groups
-#> 19:          pw Present Weather Groups
-#> 20:        vvis          Vertical Vis.
-#> 21:          wx                  CAVOK
-#> 22:     tt_sign             Temp. Sign
-#> 23:          tt            Temperature
-#> 24:     td_sign               Dew Sign
-#> 25:          td              Dew Point
-#> 26:    qnh_unit               QNH Unit
-#> 27:         qnh                    QNH
-#> 28:          ws             Wind Shear
-#> 29:      recent                 Recent
-#> 30:   trend_ind             Trend Ind.
-#> 31:   trend_str                  Trend
-#> 32:         rmk                 Remark
-#>      short_name                   name
+# Structure  (subset of columns and rows)
+print(metar.para[1:10, .(id_para, name_para)])
+#>        id_para     name_para
+#>  1:        cld Cloud Section
+#>  2:    cld_amt  Cloud Amount
+#>  3:   cld_octa   Cloud Octas
+#>  4: cld_height  Cloud Height
+#>  5:   cld_type    Cloud Type
+#>  6:       auto          AUTO
+#>  7:        cor    Correction
+#>  8:      metar         METAR
+#>  9:     recent        Recent
+#> 10:        rmk        Remark
 ```
 
 ### Example plot
@@ -120,20 +97,20 @@ dat.cld <- metar_clouds(dat.parsed$cl)
 dat.cld$time <- dat.parsed$time
 
 # Structure (subset of columns)
-print(dat.cld[1:10, .(time, cld_levels, cld_str_1 , cld_amt_1, cld_hgt_1, cld_type_1 )])
-#>                    time cld_levels cld_str_1 cld_amt_1 cld_hgt_1 cld_type_1
-#>  1: 2021-03-15 00:50:00          2    FEW008       FEW       800       <NA>
-#>  2: 2021-03-15 01:20:00          2    FEW008       FEW       800       <NA>
-#>  3: 2021-03-15 01:50:00          3    FEW007       FEW       700       <NA>
-#>  4: 2021-03-15 02:20:00          3    FEW007       FEW       700       <NA>
-#>  5: 2021-03-15 02:50:00          3    FEW011       FEW      1100       <NA>
-#>  6: 2021-03-15 03:20:00          3    FEW009       FEW       900       <NA>
-#>  7: 2021-03-15 03:50:00          2    FEW010       FEW      1000       <NA>
-#>  8: 2021-03-15 04:20:00          3    FEW009       FEW       900       <NA>
-#>  9: 2021-03-15 04:50:00          2    FEW009       FEW       900       <NA>
-#> 10: 2021-03-15 05:20:00          2    BKN010       BKN      1000       <NA>
+print(dat.cld[1:10, .(time, cld_levels,  cld_1 , cld_amt_1, cld_height_1, cld_type_1 )])
+#>                    time cld_levels  cld_1 cld_amt_1 cld_height_1 cld_type_1
+#>  1: 2021-03-15 00:50:00          2 FEW008       FEW          800       <NA>
+#>  2: 2021-03-15 01:20:00          2 FEW008       FEW          800       <NA>
+#>  3: 2021-03-15 01:50:00          3 FEW007       FEW          700       <NA>
+#>  4: 2021-03-15 02:20:00          3 FEW007       FEW          700       <NA>
+#>  5: 2021-03-15 02:50:00          3 FEW011       FEW         1100       <NA>
+#>  6: 2021-03-15 03:20:00          3 FEW009       FEW          900       <NA>
+#>  7: 2021-03-15 03:50:00          2 FEW010       FEW         1000       <NA>
+#>  8: 2021-03-15 04:20:00          3 FEW009       FEW          900       <NA>
+#>  9: 2021-03-15 04:50:00          2 FEW009       FEW          900       <NA>
+#> 10: 2021-03-15 05:20:00          2 BKN010       BKN         1000       <NA>
 
-ggplot(dat.cld, aes(time, cld_hgt_1)) +
+ggplot(dat.cld, aes(time, cld_height_1)) +
   geom_path() +
   labs(title = "Altitude of Lowest Cloud Level at LSZH Airport") +
   theme_bw()
@@ -148,23 +125,23 @@ ggplot(dat.cld, aes(time, cld_hgt_1)) +
 dat.pw <- dat.parsed[, metar_pw(pw)]
 
 # Structure (subset of columns)
-print(dat.pw[1:10, .(pw_grp_1, pw_grp_2, is_pp, RA, SN, DZ, is_solid, is_liquid, is_mixed)])
-#>     pw_grp_1 pw_grp_2 is_pp RA SN DZ is_solid is_liquid is_mixed
-#>  1:     <NA>     <NA>     0  0  0  0        0         0        0
-#>  2:     <NA>     <NA>     0  0  0  0        0         0        0
-#>  3:  -SHSNRA     <NA>     1  1  1  0        1         1        1
-#>  4:  -SHSNRA     <NA>     1  1  1  0        1         1        1
-#>  5:  -SHSNRA     <NA>     1  1  1  0        1         1        1
-#>  6:  -SHSNRA     <NA>     1  1  1  0        1         1        1
-#>  7:     <NA>     <NA>     0  0  0  0        0         0        0
-#>  8:  -SHSNRA     <NA>     1  1  1  0        1         1        1
-#>  9:  -SHSNRA     <NA>     1  1  1  0        1         1        1
-#> 10:    -RASN     <NA>     1  1  1  0        1         1        1
+print(dat.pw[1:10, .(pw_grp_1, pw_grp_2, re, PP_SOLID, PP_LIQUID, SIGWX)])
+#>     pw_grp_1 pw_grp_2       re PP_SOLID PP_LIQUID    SIGWX
+#>  1:     <NA>     <NA>     <NA>     <NA>      <NA>    NOSIG
+#>  2:     <NA>     <NA>     <NA>     <NA>      <NA>    NOSIG
+#>  3:  -SHSNRA     <NA>     <NA>       SN        RA PP_SOLID
+#>  4:  -SHSNRA     <NA>     <NA>       SN        RA PP_SOLID
+#>  5:  -SHSNRA     <NA>     <NA>       SN        RA PP_SOLID
+#>  6:  -SHSNRA     <NA>     <NA>       SN        RA PP_SOLID
+#>  7:     <NA>     <NA> RESHSNRA     <NA>      <NA>    re_PP
+#>  8:  -SHSNRA     <NA>     <NA>       SN        RA PP_SOLID
+#>  9:  -SHSNRA     <NA>     <NA>       SN        RA PP_SOLID
+#> 10:    -RASN     <NA>     <NA>       SN        RA PP_SOLID
 
 # Bind data
 dat.plot <- cbind(dat.parsed, dat.pw)
 
-plot_metargram(dat = dat.plot, cex = 0.8)
+plot_metargram(dat = dat.plot)
 ```
 
 <img src="man/figures/README-plot3-1.png" width="100%" />

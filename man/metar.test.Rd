@@ -5,7 +5,7 @@
 \alias{metar.test}
 \title{METAR Test Data Set}
 \format{
-An object of class \code{character} of length 21.
+An object of class \code{data.table} (inherits from \code{data.frame}) with 22 rows and 3 columns.
 }
 \usage{
 metar.test
@@ -13,4 +13,4 @@ metar.test
 \description{
 METAR Test Data Set
 }
-\keyword{dataset}
+\keyword{datasets}

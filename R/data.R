@@ -15,6 +15,7 @@ read_mesonet <- function(id_icao = "LSZH", date_start = date_end - 3600*24*7, da
 
   date_start <- as.POSIXct(as.character(date_start), tz = "UTC")
   date_end <- as.POSIXct(as.character(date_end), tz = "UTC")
+  if(date_end == Sys.Date()) date_end <- date_end + 3600*24
 
   def <- list(
     station = id_icao,
@@ -44,6 +45,41 @@ read_mesonet <- function(id_icao = "LSZH", date_start = date_end - 3600*24*7, da
 
   dt
 }
+
+#' Look up airport information
+#'
+#' @author M. Saenger
+#' @param  id.icao Vector of ICAO identifiers
+#' @param fi.name Lorem Ipsum
+#' @param fi.icao Lorem Ipsum
+#' @param fi.ctry Lorem Ipsum
+#' @param fi.lat Lorem Ipsum
+#' @param fi.lon Lorem Ipsum
+#' @param is.active Filter by active stations
+#' @export
+#' @examples
+#' # By ICAO Identifier
+#' metar_stn(id.icao = c("LSZH", "YSSY"))
+#' # Central Europe
+#' metar_stn(fi.icao = "^L", fi.lon = c(5, 11), fi.lat = c(46, 49))
+#' # South America (Argentina)
+#' metar_stn(fi.icao = "^SA")
+#' # Contry filter (New Zealand)
+#' metar_stn(fi.ctry = "New Zealand")
+#'
+metar_stn <- function(id.icao = metar.stn$icao, fi.name = ".+", fi.icao = ".+", fi.ctry = ".+", fi.lat = c(-90, 90),
+  fi.lon = c(-180, 180), is.active = TRUE){
+  metar.stn[
+    icao %in% id.icao &
+    grepl(fi.icao, icao, ignore.case = TRUE) &
+    grepl(fi.name, ap_name, ignore.case = TRUE) &
+    grepl(fi.ctry, ctry_name, ignore.case = TRUE) &
+    data.table::between(lon, fi.lon[1], fi.lon[2]) &
+    data.table::between(lat, fi.lat[1], fi.lat[2]) &
+    active %in% is.active
+  ]
+}
+
 
 #' Get airport information from https://www.aviationweather.gov
 #'
@@ -95,21 +131,29 @@ read_station <- function(fi.name = ".+", fi.icao = ".+", fi.ctry = ".+", fi.lat 
 #' Get METARs from NOAA cycle files
 #'
 #' @author M. Saenger
-#' @param id_icao Lorem Ipsum
-#' @param latest Lorem Ipsum
+#' @param id_icao ICAO identifiery, e. g. YSSY
+#' @param latest.only latest report per aiport only
+#' @param report.hour specific reporting hour (last 24h)
 #' @export
 #' @description
 #' metar_latest(id_icao = "LSZH")
 #' metar_latest(id_icao = "EG")
 #'
-metar_latest <- function(id_icao = NULL, latest = TRUE){
+metar_latest <- function(id_icao = NULL, latest.only = TRUE, report.hour = NULL){
 
-  time.local <- Sys.time()
-  attr(time.local, "tzone") <- "UTC"
-  time.floor <- lubridate::floor_date(time.local, "1 hour")
-  url.data <- sprintf("https://tgftp.nws.noaa.gov/data/observations/metar/cycles/%02dZ.TXT", data.table::hour(time.floor))
-  dt.lines <- readr::read_lines(url.data)
+  if(is.null(report.hour)){
+    time.local <- Sys.time()
+    attr(time.local, "tzone") <- "UTC"
+    time.floor <- lubridate::floor_date(time.local, "1 hour")
+    report.hour <- data.table::hour(time.floor)
+  }
+
+  url.data <- sprintf("https://tgftp.nws.noaa.gov/data/observations/metar/cycles/%02dZ.TXT", report.hour)
+  dt.lines <- readr::read_lines(url.data, locale = )
   reports <- dt.lines[grepl("^([A-Z]{4}).+", dt.lines)]
+
+  # Check and exclude invalid UTF-8
+  reports <- reports[which(validUTF8(reports))]
 
   id <- str_extract(reports,"^([A-Z]{4})") # extract id icao
   reports <- reports[grepl(sprintf("^%s", id_icao), id)] # Filter
@@ -119,7 +163,7 @@ metar_latest <- function(id_icao = NULL, latest = TRUE){
   reports <- reports[!duplicated(key)]
 
   # Filter latest
-  if(latest){
+  if(latest.only){
     id <- str_extract(reports,"^([A-Z]{4})")
     ind <- tapply(seq_along(id), id, max)
     reports <- reports[ind]
