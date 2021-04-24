@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct.R
 \name{metar_clouds}
 \alias{metar_clouds}
-\title{Parse a METAR cloud groups}
+\title{Parse METAR cloud groups}
 \usage{
 metar_clouds(cld)
 }
@@ -10,7 +10,7 @@ metar_clouds(cld)
 \item{cld}{METAR cloud string}
 }
 \description{
-Parse a METAR cloud groups
+Parse METAR cloud groups
 }
 \examples{
 metar_clouds(cld = c("FEW030 FEW032TCU SCT050 BKN075", "SCT050 SCT075 OVC149", "", "SCT003"))

@@ -2,7 +2,7 @@
 % Please edit documentation in R/data.R
 \name{read_station}
 \alias{read_station}
-\title{Get airport information from https://www.aviationweather.gov}
+\title{Airport meta information from https://www.aviationweather.gov}
 \usage{
 read_station(
   fi.name = ".+",
@@ -24,7 +24,7 @@ read_station(
 \item{fi.lon}{Lorem Ipsum}
 }
 \description{
-Get airport information from https://www.aviationweather.gov
+Legacy function. Access data directly via data set \code{metar.stn}
 }
 \examples{
 # Central Europe

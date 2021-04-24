@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct.R
 \name{metar_pw}
 \alias{metar_pw}
-\title{Parse a METAR PW groups}
+\title{Parse METAR PW groups}
 \usage{
 metar_pw(pw, DC = FALSE, PH = FALSE)
 }
@@ -14,7 +14,7 @@ metar_pw(pw, DC = FALSE, PH = FALSE)
 \item{PH}{Add phenomenon cross table}
 }
 \description{
-Parse a METAR PW groups
+Parse METAR PW groups
 }
 \author{
 M. Saenger

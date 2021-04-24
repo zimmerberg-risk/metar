@@ -16,6 +16,7 @@ Parse a METAR report
 }
 \examples{
  parse_metar(x = "LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG")
+ parse_metar(x = "LSZH 271750Z AUTO /////KT //// ////// 17/// Q//// NOSIG")
  parse_metar(x = metar.test$code)
 
 }

@@ -9,12 +9,75 @@ library(data.table)
 library(maps)
 
 
-x <- metar_latest(id_icao = "")
-dat <- parse_metar(x = x)
-xxx <- metar_validate(dat, set.na = TRUE)
-xxx[order(-flag)]
+
+# ---------------------------------------- Latest -----------------------------------------------
+
+x <- metar_latest(id_icao = "", report.hour = 15)
+dat.parsed <- parse_metar(x = x)
+dt <- metar_validate(dat.parsed, set.na = TRUE)
+
+dt.pw <- metar_pw(pw = dt$pw)
+dt.cld <- metar_clouds(cld = dt$cld)
+dt.rvr <- metar_rvr(rvr = dt$rvr)
+dt.comb <- cbind(dt, dt.pw, dt.cld, dt.rvr)
+
+# dt.comb[is.na(td)]
+# head(dt.comb[, .(icao, ap_name, metar, wx, pw, cld, qnh, fx, ff, rvr)][order(-fx)], 30)
+# head(dt.comb[, .(icao, ctry, ap_name, SIGWX, metar)][SIGWX != "NOSIG"], 30)
+#
+# dt.comb[, .N, SIGWX]
+# dt.comb[ctry == "FR"]
+
+# ---------------------------------------- Leaflet Numerical -----------------------------------------------
+library(leaflet)
+id.para <- "tt"
+pal <- colorNumeric("Spectral", reverse = TRUE, domain = NULL, na.color = "#eeefff")
+leaflet(data = dt.comb) %>%
+  addTiles() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addCircleMarkers(~lon, ~lat, stroke = T, radius = 3.5, weight = 1, color = "black", fillColor = ~pal(dt.comb[[id.para]]), fillOpacity = 1,
+                   popup = ~ sprintf("<p>%s %s (%sm)</p><p>%s</p>", icao, ap_name, elev, metar)) %>%
+  addLegend(pal = pal, values = dt.comb[[id.para]], bins = 20)
+
+# ---------------------------------------- Leaflet Categorical -----------------------------------------------
+
+id.para <- "sigwx"
+levels <- metar.class[id_para == "sigwx"][1:8]$id_class
+dt.comb[, SIGWX := factor(SIGWX, levels)]
+pal <- colorFactor(palette = metar.class[id_para == "sigwx"][1:8]$col, levels = levels, na.color = "#eeefff")
+leaflet(data = dt.comb) %>%
+  addTiles() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addCircleMarkers(~lon, ~lat, stroke = T, radius = 3.5, weight = 1, color = "black", fillColor = ~pal(dt.comb[[id.para]]), fillOpacity = 1,
+                   popup = ~ sprintf("<p>%s %s (%sm)</p><p>%s</p>", icao, ap_name, elev, metar)) %>%
+  addLegend(pal = pal, values = dt.comb[[id.para]], opacity = 1)
+
+# ---------------------------------------- Map -----------------------------------------------
+library(sp)
+library(wxPlot)
+library(rnaturalearth)
+
+id.para <- "qnh"
+id.proj <- "mercator"
+dt.plot <- dt.comb[!is.na(get(id.para)) & !is.na(lon),]
+coordinates(dt.plot) <- ~lon + lat
+proj4string(dt.plot) <- lib.crs$longlat[[2]]
+
+dt.plot.longlat = spTransform(dt.plot, CRS(lib.crs[[id.proj]][[2]]))
+sp.map <- ne_countries("small")
+sp.map <- raster::crop(sp.map, raster::extent(-175, 180, -55, 80))
+sp.map <- spTransform(sp.map, CRS(lib.crs[[id.proj]][[2]]))
 
 
+val <- dt.plot.longlat[[id.para]]
+brks <- pretty(val, 15)
+cols <- hcl.colors((length(brks) - 1), "Plasma")
+sp::plot(sp.map, add = F, bg = "lightblue", col = "#eeeeee", xlim = as.vector(sp.map@bbox[1,]), ylim = as.vector(sp.map@bbox[2,]), xaxs = "i", yaxs = "i")
+sp::plot(dt.plot.longlat, pch = 16, col = "grey", cex = .5, add = T)
+points(dt.plot.longlat, pch = 16, cex = 0.7, col = as.character(cut(val, brks, cols, include.lowest = T)))
+legend("bottomleft", legend = brks[-1], title = id.para,fill = cols)
+
+# ---------------------------------------- World -----------------------------------------------
 
 metar_stn(fi.name = "^darwin")
 
@@ -42,12 +105,12 @@ id.folder <- sprintf("C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/Dat
 
 void <- lapply(stn[], function(id.icao){
 
-  # id.icao <- "LSZH"
+  # id.icao <- "OEAB"
 
   cat(id.icao, " ", match(id.icao, stn), "\n")
 
   date.start <- "2021-03-22"
-  date.end <- "2021-04-22"
+  date.end <- "2021-04-24"
   dat.metar <- read_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end)
   if(nrow(dat.metar) == 0) return(NULL)
   dat.parsed <- parse_metar(x = dat.metar$metar, date = dat.metar$valid)
@@ -78,20 +141,4 @@ dat.map$col <- as.character(cut(dat.map$fx, brks, cols))
 plot(dat.map$lon, dat.map$lat, type = "n")
 points(dat.map$lon, dat.map$lat, col = dat.map$col , pch =16)
 
-
-
-# Groups
-dt.stn <- metar::read_station()
-dt.in <- read_mesonet(id_icao = "KSFO", date_start = Sys.time() - 3600*24*3, date_end = Sys.time() + 3600*24) #"RKPK"
-
-dt.in <- metar_latest(id_icao = "")
-dt <- parse_metar(x = dt.in)
-unique(dt$pw)
-
-dt.pw <- metar_pw(pw = dt$pw)
-dt.cld <- metar_clouds(cld = dt$cld)
-dt.rvr <- metar_rvr(rvr = dt$rvr)
-dt.comb <- cbind(dt, dt.pw, dt.cld, dt.rvr)
-
-head(dt.comb[, .(icao, ap_name, metar, wx, pw, cld, qnh, fx, ff, rvr)][order(-fx)], 30)
 

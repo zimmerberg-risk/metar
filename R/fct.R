@@ -7,6 +7,7 @@
 #' @export
 #' @examples
 #'  parse_metar(x = "LSZH 271750Z 14002KT CAVOK 25/18 Q1017 NOSIG")
+#'  parse_metar(x = "LSZH 271750Z AUTO /////KT //// ////// 17/// Q//// NOSIG")
 #'  parse_metar(x = metar.test$code)
 #'
 parse_metar <- function(x, date){
@@ -79,7 +80,7 @@ parse_metar <- function(x, date){
   # colnames(pw) <- c("pw")
 
   # Temperature/dew point
-  regex.tttd <- "\\s(M)?([0-9]{2})/(M)?([0-9]{2})?\\s"
+  regex.tttd <- "(?<=\\s)(M)?([0-9]{2})/(M)?([0-9\\/]{2})(?=\\b)"
   tttd <- rbind(str_match(metar, regex.tttd)[,-1])
   colnames(tttd) <-c("tt_unit", "tt", "td_unit", "td")
 
@@ -191,7 +192,7 @@ metar_validate <- function(dat, set.na = TRUE){
   dat
 }
 
-#' Parse a METAR PW groups
+#' Parse METAR PW groups
 #'
 #' @author M. Saenger
 #' @param pw METAR PW string
@@ -256,9 +257,7 @@ metar_pw <- function(pw, DC = FALSE, PH = FALSE){
   # Significant weather GR > TS > ST > FZ > PP_HEAVY > PP_SOLID > PP_LiQUID > FG > vc_TS > vc_FG
   dt.pw[, NOSIG := 1]
   sig.wx <- c("GR", "TS", "ST", "FZ", "PP_HEAVY", "PP_SOLID", "PP_LIQUID", "FG", "vc_TS", "vc_FG", "re_TS", "re_PP", "NOSIG")
-  dt.pw[, SIGWX := sig.wx[apply(!is.na(as.matrix(.SD)), 1, which.max)], .SDcols = sig.wx]
-
-  dt.pw[SIGWX!="NOSIG"]$SIGWX
+  dt.pw[, sigwx := sig.wx[apply(!is.na(as.matrix(.SD)), 1, which.max)], .SDcols = sig.wx]
 
   dt.comb <- dt.pw
 
@@ -285,25 +284,8 @@ metar_pw <- function(pw, DC = FALSE, PH = FALSE){
   dt.comb
 }
 
-# code <- metar_latest(id_icao = "", report.hour = 6)
-# dat <- metar_parse(x = code)
-# x <- dat$pw
-#
-# dt.pw <- metar_pw(pw = x, DC = F, PH = F)
-# dt.comb <- cbind(dat, dt.pw)
-# dt.comb[!is.na(re)]
-#
-# unique(dt.comb$pw)
-# unique(dt.comb$pw_grp_1)
-# unique(dt.comb$pw_grp_2)
-# unique(dt.comb$re)
-# unique(dt.comb$vc)
-#
-# readr::write_excel_csv(dt.comb, "C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/Data/metar/pw_test.csv", na = "", quote_escape = "double")
-#
 
-
-  #' Parse a METAR cloud groups
+#' Parse METAR cloud groups
 #'
 #' @author M. Saenger
 #' @param cld METAR cloud string
@@ -312,7 +294,7 @@ metar_pw <- function(pw, DC = FALSE, PH = FALSE){
 #' metar_clouds(cld = c("FEW030 FEW032TCU SCT050 BKN075", "SCT050 SCT075 OVC149", "", "SCT003"))
 #'
 metar_clouds <- function(cld){
-  metar.vars.cld <- metar.para[parent_para == "cld" & id_para != "cld_octa"]
+  metar.vars.cld <- c("cld", "cld_amt", "cld_hgt", "cld_type")
   cld.amt <- metar.class[id_para == "cld_amt"]
 
   dt.1 <- data.table(cld)
@@ -321,30 +303,31 @@ metar_clouds <- function(cld){
 
   m <- str_match_all(dt.1$cld, "(FEW|SCT|BKN|OVC|[\\/]{3})([0-9]{3}|[\\/]{3})([A-Z]{2,3}|\\/\\/\\/)?")
   dt.cld <- data.table(do.call(rbind, m))
-  setnames(dt.cld, c(metar.vars.cld$id_para))
+  setnames(dt.cld, metar.vars.cld)
+
   dt.cld$id <- rep(seq_along(m), sapply(m, nrow))
   dt.cld[, cld_level := seq_len(.N), id][order(id, cld_level)]
 
-  void <- lapply(seq_along(metar.vars.cld$id_para), function(i){
-    fct <- paste("as", metar.vars.cld[i]$type, sep = ".")
+  void <- lapply(seq_along(metar.vars.cld), function(i){
+    fct <- paste("as", metar.para[id_para == metar.vars.cld[i]]$type, sep = ".")
     dt.cld[, (i) := lapply(.SD, fct), .SDcols = c(i)]
   })
-  dt.cld[, cld_height := cld_height * 1e2]
+  dt.cld[, cld_hgt := cld_hgt * 1e2]
   setkey(dt.cld, id)
 
-  dt.ceil <- dt.cld[cld_amt %in% c("BKN", "OVC"), .(ceiling = min(cld_height)), id]
+  dt.ceil <- dt.cld[cld_amt %in% c("BKN", "OVC"), .(ceiling = min(cld_hgt)), id]
   setkey(dt.ceil, id)
-  dt.agg <- dt.cld[, .(cld_levels = max(cld_level), cld_hgt_min = min(cld_height), cld_hgt_max = max(cld_height),
+  dt.agg <- dt.cld[, .(cld_levels = max(cld_level), cld_hgt_min = min(cld_hgt), cld_hgt_max = max(cld_hgt),
     cld_amt_max = cld.amt[max(match(cld_amt, cld.amt$id_class))]$id_class, cld_amt_min = cld.amt[min(match(cld_amt, cld.amt$id_class))]$id_class), id]
 
-  dt.cast <- data.table::dcast(dt.cld, id ~ cld_level, value.var = metar.vars.cld$id_para)
+  dt.cast <- data.table::dcast(dt.cld, id ~ cld_level, value.var = metar.vars.cld)
   setkey(dt.cast, id)
 
   dt <- Reduce(function(...) merge(..., all = TRUE), list(dt.1, dt.agg, dt.ceil, dt.cast))
   dt[, `:=`(id = NULL, cld = NULL)][]
 }
 
-#' Parse a METAR RVR groups
+#' Parse METAR RVR groups
 #'
 #' @author M. Saenger
 #' @param rvr METAR RVR string

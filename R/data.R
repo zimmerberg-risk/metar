@@ -81,7 +81,7 @@ metar_stn <- function(id.icao = metar.stn$icao, fi.name = ".+", fi.icao = ".+", 
 }
 
 
-#' Get airport information from https://www.aviationweather.gov
+#' Airport meta information from https://www.aviationweather.gov
 #'
 #' @author M. Saenger
 #' @param fi.name Lorem Ipsum
@@ -89,6 +89,7 @@ metar_stn <- function(id.icao = metar.stn$icao, fi.name = ".+", fi.icao = ".+", 
 #' @param fi.ctry Lorem Ipsum
 #' @param fi.lat Lorem Ipsum
 #' @param fi.lon Lorem Ipsum
+#' @description Legacy function. Access data directly via data set `metar.stn`
 #' @export
 #' @examples
 #' # Central Europe

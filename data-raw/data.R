@@ -22,8 +22,6 @@ l <- lapply(sheets, function(i){
 dt.stn <- fread("data-raw/master-location-identifier-database-202103_standard.csv", skip = 4, encoding = "Latin-1",
                 na.strings = c("", "-9999"))
 
-
-
 metar.stn <- dt.stn[!is.na(icao), .(icao, ctry = country2, ctry3 = country3, ctry_name = country, region, ap_name_long = place_name, lon, lat, elev )]
 metar.stn[, ap_name := trimws(tstrsplit(ap_name_long, "\\|")[[1]])]
 metar.stn <- metar.stn[!is.na(icao) & !is.na(lat)]

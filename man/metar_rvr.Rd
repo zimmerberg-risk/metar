@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct.R
 \name{metar_rvr}
 \alias{metar_rvr}
-\title{Parse a METAR RVR groups}
+\title{Parse METAR RVR groups}
 \usage{
 metar_rvr(rvr)
 }
@@ -10,7 +10,7 @@ metar_rvr(rvr)
 \item{rvr}{METAR RVR string}
 }
 \description{
-Parse a METAR RVR groups
+Parse METAR RVR groups
 }
 \examples{
 metar_rvr(rvr = "R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U")

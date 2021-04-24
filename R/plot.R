@@ -201,7 +201,7 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
   sigwx.cond <- c(setNames(sigwx.col, sigwx.id))
 
   dat$ctrl <- 1
-  dat.pw <- dat[,  .(time, pw, pw_col = sigwx.col[match(SIGWX, sigwx.id)])]
+  dat.pw <- dat[,  .(time, pw, pw_col = sigwx.col[match(sigwx, sigwx.id)])]
 
   title.1.txt <- c("Visibility [km]: ", "Meteorological | ", "Vertical [100 ft] (+)")
   title.1.col <-  c("black", "black", "dodgerblue2")

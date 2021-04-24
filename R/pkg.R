@@ -5,3 +5,5 @@
 #' @importFrom lubridate floor_date ceiling_date
 #'
 NULL
+
+utils::globalVariables(c("."))
