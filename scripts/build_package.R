@@ -40,7 +40,7 @@ usethis:::use_data(
 devtools::document()
 devtools::check()
 # devtools::build_readme()
-
+# devtools::build_vignettes()
 
 detach("package:metar", unload = TRUE)
 remove.packages("metar")

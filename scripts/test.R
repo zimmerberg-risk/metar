@@ -8,11 +8,9 @@ library(stringr)
 library(data.table)
 library(maps)
 
-
-
 # ---------------------------------------- Latest -----------------------------------------------
 
-x <- metar_latest(id_icao = "", report.hour = 15)
+x <- metar_latest(id_icao = "", report.hour = 6)
 dat.parsed <- parse_metar(x = x)
 dt <- metar_validate(dat.parsed, set.na = TRUE)
 
@@ -20,6 +18,13 @@ dt.pw <- metar_pw(pw = dt$pw)
 dt.cld <- metar_clouds(cld = dt$cld)
 dt.rvr <- metar_rvr(rvr = dt$rvr)
 dt.comb <- cbind(dt, dt.pw, dt.cld, dt.rvr)
+
+
+dt.comb[icao == "ZMUB"]
+
+
+# unique(dt$rwc)
+# unique(dt$rvr)
 
 # dt.comb[is.na(td)]
 # head(dt.comb[, .(icao, ap_name, metar, wx, pw, cld, qnh, fx, ff, rvr)][order(-fx)], 30)
@@ -43,14 +48,16 @@ leaflet(data = dt.comb) %>%
 
 id.para <- "sigwx"
 levels <- metar.class[id_para == "sigwx"][1:8]$id_class
-dt.comb[, SIGWX := factor(SIGWX, levels)]
+dt.map <- dt.comb[sigwx %in% levels]
+dt.map[, sigwx := factor(sigwx, levels)]
 pal <- colorFactor(palette = metar.class[id_para == "sigwx"][1:8]$col, levels = levels, na.color = "#eeefff")
-leaflet(data = dt.comb) %>%
+
+leaflet(data = dt.map) %>%
   addTiles() %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
-  addCircleMarkers(~lon, ~lat, stroke = T, radius = 3.5, weight = 1, color = "black", fillColor = ~pal(dt.comb[[id.para]]), fillOpacity = 1,
+  addCircleMarkers(~lon, ~lat, stroke = T, radius = 3.5, weight = 1, color = "black", fillColor = ~pal(dt.map[[id.para]]), fillOpacity = 1,
                    popup = ~ sprintf("<p>%s %s (%sm)</p><p>%s</p>", icao, ap_name, elev, metar)) %>%
-  addLegend(pal = pal, values = dt.comb[[id.para]], opacity = 1)
+  addLegend(pal = pal, values = dt.map[[id.para]], opacity = 1)
 
 # ---------------------------------------- Map -----------------------------------------------
 library(sp)
@@ -79,10 +86,10 @@ legend("bottomleft", legend = brks[-1], title = id.para,fill = cols)
 
 # ---------------------------------------- World -----------------------------------------------
 
-metar_stn(fi.name = "^darwin")
+metar_stn(fi.name = "^thule")
 
 stn <- metar_stn(fi.lat = c(40, 50), fi.lon = c(5, 15))$icao
-stn <- metar_stn(fi.ctry = "Australia")$icao
+stn <- metar_stn(fi.ctry = "Switz")$icao
 
 data(world.cities)
 dt.cities <- as.data.table(world.cities)
@@ -105,12 +112,12 @@ id.folder <- sprintf("C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/Dat
 
 void <- lapply(stn[], function(id.icao){
 
-  # id.icao <- "OEAB"
+  # id.icao <- "BGTL"
 
   cat(id.icao, " ", match(id.icao, stn), "\n")
 
-  date.start <- "2021-03-22"
-  date.end <- "2021-04-24"
+  date.start <-  Sys.Date() - 31
+  date.end <- Sys.Date()
   dat.metar <- read_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end)
   if(nrow(dat.metar) == 0) return(NULL)
   dat.parsed <- parse_metar(x = dat.metar$metar, date = dat.metar$valid)

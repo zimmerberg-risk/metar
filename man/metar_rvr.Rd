@@ -13,7 +13,7 @@ metar_rvr(rvr)
 Parse METAR RVR groups
 }
 \examples{
-metar_rvr(rvr = "R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U")
+metar_rvr(rvr = c("R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U", "R14/P2000N", "R08R/3000VP6000FT", "R22/0700D", "", "R18L/290050"))
 
 }
 \author{

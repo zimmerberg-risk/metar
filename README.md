@@ -63,17 +63,17 @@ library(data.table)
 #> Warning: package 'data.table' was built under R version 4.0.4
 # Structure  (subset of columns and rows)
 print(metar.para[1:10, .(id_para, name_para)])
-#>        id_para     name_para
-#>  1:        cld Cloud Section
-#>  2:    cld_amt  Cloud Amount
-#>  3:   cld_octa   Cloud Octas
-#>  4: cld_height  Cloud Height
-#>  5:   cld_type    Cloud Type
-#>  6:       auto          AUTO
-#>  7:        cor    Correction
-#>  8:      metar         METAR
-#>  9:     recent        Recent
-#> 10:        rmk        Remark
+#>         id_para            name_para
+#>  1:         cld        Cloud Section
+#>  2:     cld_amt         Cloud Amount
+#>  3:    cld_octa          Cloud Octas
+#>  4:     cld_hgt         Cloud Height
+#>  5: cld_hgt_min Cloud Height Minimum
+#>  6: cld_hgt_max Cloud Height Maximum
+#>  7:    cld_type           Cloud Type
+#>  8:     ceiling              Ceiling
+#>  9:        auto                 AUTO
+#> 10:         cor           Correction
 ```
 
 ### Example plot
@@ -97,20 +97,20 @@ dat.cld <- metar_clouds(dat.parsed$cl)
 dat.cld$time <- dat.parsed$time
 
 # Structure (subset of columns)
-print(dat.cld[1:10, .(time, cld_levels,  cld_1 , cld_amt_1, cld_height_1, cld_type_1 )])
-#>                    time cld_levels  cld_1 cld_amt_1 cld_height_1 cld_type_1
-#>  1: 2021-03-15 00:50:00          2 FEW008       FEW          800       <NA>
-#>  2: 2021-03-15 01:20:00          2 FEW008       FEW          800       <NA>
-#>  3: 2021-03-15 01:50:00          3 FEW007       FEW          700       <NA>
-#>  4: 2021-03-15 02:20:00          3 FEW007       FEW          700       <NA>
-#>  5: 2021-03-15 02:50:00          3 FEW011       FEW         1100       <NA>
-#>  6: 2021-03-15 03:20:00          3 FEW009       FEW          900       <NA>
-#>  7: 2021-03-15 03:50:00          2 FEW010       FEW         1000       <NA>
-#>  8: 2021-03-15 04:20:00          3 FEW009       FEW          900       <NA>
-#>  9: 2021-03-15 04:50:00          2 FEW009       FEW          900       <NA>
-#> 10: 2021-03-15 05:20:00          2 BKN010       BKN         1000       <NA>
+print(dat.cld[1:10, .(time, cld_levels,  cld_1 , cld_amt_1, cld_hgt_1, cld_type_1 )])
+#>                    time cld_levels  cld_1 cld_amt_1 cld_hgt_1 cld_type_1
+#>  1: 2021-03-15 00:50:00          2 FEW008       FEW       800       <NA>
+#>  2: 2021-03-15 01:20:00          2 FEW008       FEW       800       <NA>
+#>  3: 2021-03-15 01:50:00          3 FEW007       FEW       700       <NA>
+#>  4: 2021-03-15 02:20:00          3 FEW007       FEW       700       <NA>
+#>  5: 2021-03-15 02:50:00          3 FEW011       FEW      1100       <NA>
+#>  6: 2021-03-15 03:20:00          3 FEW009       FEW       900       <NA>
+#>  7: 2021-03-15 03:50:00          2 FEW010       FEW      1000       <NA>
+#>  8: 2021-03-15 04:20:00          3 FEW009       FEW       900       <NA>
+#>  9: 2021-03-15 04:50:00          2 FEW009       FEW       900       <NA>
+#> 10: 2021-03-15 05:20:00          2 BKN010       BKN      1000       <NA>
 
-ggplot(dat.cld, aes(time, cld_height_1)) +
+ggplot(dat.cld, aes(time, cld_hgt_1)) +
   geom_path() +
   labs(title = "Altitude of Lowest Cloud Level at LSZH Airport") +
   theme_bw()
@@ -125,8 +125,8 @@ ggplot(dat.cld, aes(time, cld_height_1)) +
 dat.pw <- dat.parsed[, metar_pw(pw)]
 
 # Structure (subset of columns)
-print(dat.pw[1:10, .(pw_grp_1, pw_grp_2, re, PP_SOLID, PP_LIQUID, SIGWX)])
-#>     pw_grp_1 pw_grp_2       re PP_SOLID PP_LIQUID    SIGWX
+print(dat.pw[1:10, .(pw_grp_1, pw_grp_2, re, PP_SOLID, PP_LIQUID, sigwx)])
+#>     pw_grp_1 pw_grp_2       re PP_SOLID PP_LIQUID    sigwx
 #>  1:     <NA>     <NA>     <NA>     <NA>      <NA>    NOSIG
 #>  2:     <NA>     <NA>     <NA>     <NA>      <NA>    NOSIG
 #>  3:  -SHSNRA     <NA>     <NA>       SN        RA PP_SOLID

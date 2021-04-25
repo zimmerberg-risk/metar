@@ -55,18 +55,9 @@ parse_metar <- function(x, date){
   vis.min <- rbind(str_match(metar, regex.vis.min)[,-1])
   colnames(vis.min) <- c("min_vis", "min_vis_dir")
 
-
-
-
-  # metar = c("R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U", "R14/P2000N", "R08R/3000VP6000FT", "R22/0700D", "", "R18L/290050")
-  # str_extract_all(metar, "R[0-9]{2}[CRL]?\\/([PM]?[0-9]{4}[DUN]?)(V[PM]?[0-9]{4}[DUN]?)?(FT)?\\b")
-
   regex.rvr <- "R[0-9]{2}[CRL]?\\/([PM]?[0-9]{4}[DUN]?)(V[PM]?[0-9]{4}[DUN]?)?(FT)?\\b"
-  #regex.rvr <- "((R([0-9\\/CRL]{2,3})\\/(P|P|M|\\/)?([0-9\\/]{4})(D|U|N)?V?(VP|P|M)?([0-9]{4})?(FT|D|U|N)?){1,4})"
   rvr <- cbind(sapply(str_extract_all(metar, regex.rvr), paste, collapse = " "))
   colnames(rvr) <- c("rvr")
-
-  #str_extract_all(metar, "\\bR[0-9]{2}[CRL]?\\/[0-9\\/]{1}[1259\\/]{1}[0-9A-Z\\/]{4}\\b")
 
   regex.rwc <- "\\bR[0-9]{2}[CRL]?\\/[0-9\\/]{1}[1259\\/]{1}[0-9A-Z\\/]{4}\\b"
   rwc <- cbind(sapply(str_extract_all(metar, regex.rwc), paste, collapse = " "))

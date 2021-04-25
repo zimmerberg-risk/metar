@@ -86,9 +86,9 @@ dat.cld <- metar_clouds(dat.parsed$cl)
 dat.cld$time <- dat.parsed$time
 
 # Structure (subset of columns)
-print(dat.cld[1:10, .(time, cld_levels,  cld_1 , cld_amt_1, cld_height_1, cld_type_1 )])
+print(dat.cld[1:10, .(time, cld_levels,  cld_1 , cld_amt_1, cld_hgt_1, cld_type_1 )])
 
-ggplot(dat.cld, aes(time, cld_height_1)) +
+ggplot(dat.cld, aes(time, cld_hgt_1)) +
   geom_path() +
   labs(title = "Altitude of Lowest Cloud Level at LSZH Airport") +
   theme_bw()
@@ -102,7 +102,7 @@ ggplot(dat.cld, aes(time, cld_height_1)) +
 dat.pw <- dat.parsed[, metar_pw(pw)]
 
 # Structure (subset of columns)
-print(dat.pw[1:10, .(pw_grp_1, pw_grp_2, re, PP_SOLID, PP_LIQUID, SIGWX)])
+print(dat.pw[1:10, .(pw_grp_1, pw_grp_2, re, PP_SOLID, PP_LIQUID, sigwx)])
 
 # Bind data
 dat.plot <- cbind(dat.parsed, dat.pw)
