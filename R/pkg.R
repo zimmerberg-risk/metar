@@ -6,4 +6,4 @@
 #'
 NULL
 
-utils::globalVariables(c("."))
+utils::globalVariables(c(".", ":="))

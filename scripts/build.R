@@ -8,8 +8,8 @@ library(available)
 #' https://happygitwithr.com/ssh-keys.html
 
 package.name <- "metar"
+available::available(package.name)
 
-available(package.name)
 create_package(sprintf("C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/R/%s", package.name))
 
 usethis::use_git_config(user.name = "m-saenger", user.email = "matthias.saenger@myweather.ch")
@@ -51,7 +51,7 @@ library(metar)
 # https://github.com/m-saenger/metar
 devtools::install_github("m-saenger/metar", upgrade = "never")
 
-# git tag 0.3.1
+# git tag 0.4.1
 # git push --tags
 # git tags
 

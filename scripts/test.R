@@ -10,7 +10,7 @@ library(maps)
 
 # ---------------------------------------- Latest -----------------------------------------------
 
-x <- metar_latest(id_icao = "", report.hour = 6)
+x <- metar_latest(id_icao = "", report.hour = 18)
 dat.parsed <- parse_metar(x = x)
 dt <- metar_validate(dat.parsed, set.na = TRUE)
 
@@ -35,13 +35,13 @@ dt.comb[icao == "ZMUB"]
 
 # ---------------------------------------- Leaflet Numerical -----------------------------------------------
 library(leaflet)
-id.para <- "tt"
+id.para <- "ff"
 pal <- colorNumeric("Spectral", reverse = TRUE, domain = NULL, na.color = "#eeefff")
 leaflet(data = dt.comb) %>%
   addTiles() %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
   addCircleMarkers(~lon, ~lat, stroke = T, radius = 3.5, weight = 1, color = "black", fillColor = ~pal(dt.comb[[id.para]]), fillOpacity = 1,
-                   popup = ~ sprintf("<p>%s %s (%sm)</p><p>%s</p>", icao, ap_name, elev, metar)) %>%
+                   popup = ~ sprintf("<p>%s %s (%sm)</p><p>%s</p><p>%s</p>", icao, ap_name, elev, time, metar)) %>%
   addLegend(pal = pal, values = dt.comb[[id.para]], bins = 20)
 
 # ---------------------------------------- Leaflet Categorical -----------------------------------------------
@@ -56,7 +56,7 @@ leaflet(data = dt.map) %>%
   addTiles() %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
   addCircleMarkers(~lon, ~lat, stroke = T, radius = 3.5, weight = 1, color = "black", fillColor = ~pal(dt.map[[id.para]]), fillOpacity = 1,
-                   popup = ~ sprintf("<p>%s %s (%sm)</p><p>%s</p>", icao, ap_name, elev, metar)) %>%
+                   popup = ~ sprintf("<p>%s %s (%sm)</p><p>%s</p><p>%s</p>", icao, ap_name, elev, time, metar)) %>%
   addLegend(pal = pal, values = dt.map[[id.para]], opacity = 1)
 
 # ---------------------------------------- Map -----------------------------------------------
@@ -112,7 +112,7 @@ id.folder <- sprintf("C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/Dat
 
 void <- lapply(stn[], function(id.icao){
 
-  # id.icao <- "BGTL"
+  # id.icao <- "RJAW"
 
   cat(id.icao, " ", match(id.icao, stn), "\n")
 
