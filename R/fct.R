@@ -55,9 +55,22 @@ parse_metar <- function(x, date){
   vis.min <- rbind(str_match(metar, regex.vis.min)[,-1])
   colnames(vis.min) <- c("min_vis", "min_vis_dir")
 
-  regex.rvr <- "((R([0-9\\/CRL]{2,3})\\/(P|P|M|\\/)?([0-9\\/]{4})(D|U|N)?V?(VP|P|M)?([0-9]{4})?(FT|D|U|N)?){1,4})"
+
+
+
+  # metar = c("R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U", "R14/P2000N", "R08R/3000VP6000FT", "R22/0700D", "", "R18L/290050")
+  # str_extract_all(metar, "R[0-9]{2}[CRL]?\\/([PM]?[0-9]{4}[DUN]?)(V[PM]?[0-9]{4}[DUN]?)?(FT)?\\b")
+
+  regex.rvr <- "R[0-9]{2}[CRL]?\\/([PM]?[0-9]{4}[DUN]?)(V[PM]?[0-9]{4}[DUN]?)?(FT)?\\b"
+  #regex.rvr <- "((R([0-9\\/CRL]{2,3})\\/(P|P|M|\\/)?([0-9\\/]{4})(D|U|N)?V?(VP|P|M)?([0-9]{4})?(FT|D|U|N)?){1,4})"
   rvr <- cbind(sapply(str_extract_all(metar, regex.rvr), paste, collapse = " "))
   colnames(rvr) <- c("rvr")
+
+  #str_extract_all(metar, "\\bR[0-9]{2}[CRL]?\\/[0-9\\/]{1}[1259\\/]{1}[0-9A-Z\\/]{4}\\b")
+
+  regex.rwc <- "\\bR[0-9]{2}[CRL]?\\/[0-9\\/]{1}[1259\\/]{1}[0-9A-Z\\/]{4}\\b"
+  rwc <- cbind(sapply(str_extract_all(metar, regex.rwc), paste, collapse = " "))
+  colnames(rwc) <- c("rwc")
 
   regex.vvis <- "(?<=VV)([0-9|\\/]{3})"
   vvis <- cbind(str_match(metar, regex.vvis)[,-1])
@@ -95,7 +108,7 @@ parse_metar <- function(x, date){
   colnames(ws) <- c("ws")
 
   # Combine
-  dt <- as.data.table(cbind(icao, time, speci, auto, cor, wx, wind, wind.var, vis, vis.min, rvr, vvis,
+  dt <- as.data.table(cbind(icao, time, speci, auto, cor, wx, wind, wind.var, vis, vis.min, rvr, rwc, vvis,
     cld, tttd, pw, qnh, ws, metar, rmk))
 
   # Wind calm -> no wind dir
@@ -270,7 +283,6 @@ metar_pw <- function(pw, DC = FALSE, PH = FALSE){
   dt.ph <- data.table(ph.sums[,-1, drop = FALSE])
   setnames(dt.ph, paste("PH", metar.ph$id_ph, sep = "_"))
 
-
   # Descriptor
   dc.match <- str_match_all(pw, sprintf("(%s)", paste(metar.dc$id_dc, collapse = ")|(")))
   dc.matrix <- lapply(dc.match, function(i) (!is.na(i))*1)
@@ -306,19 +318,27 @@ metar_clouds <- function(cld){
   setnames(dt.cld, metar.vars.cld)
 
   dt.cld$id <- rep(seq_along(m), sapply(m, nrow))
+
   dt.cld[, cld_level := seq_len(.N), id][order(id, cld_level)]
 
-  void <- lapply(seq_along(metar.vars.cld), function(i){
-    fct <- paste("as", metar.para[id_para == metar.vars.cld[i]]$type, sep = ".")
-    dt.cld[, (i) := lapply(.SD, fct), .SDcols = c(i)]
+  void <- lapply(metar.vars.cld, function(i){
+    def <- metar.para[id_para == i]
+    # Convert type
+    suppressWarnings(dt.cld[, (i) := do.call(paste0("as.", def$type_para), list(dt.cld[[i]]))])
   })
   dt.cld[, cld_hgt := cld_hgt * 1e2]
   setkey(dt.cld, id)
 
+  # Ceiling
   dt.ceil <- dt.cld[cld_amt %in% c("BKN", "OVC"), .(ceiling = min(cld_hgt)), id]
+
   setkey(dt.ceil, id)
-  dt.agg <- dt.cld[, .(cld_levels = max(cld_level), cld_hgt_min = min(cld_hgt), cld_hgt_max = max(cld_hgt),
-    cld_amt_max = cld.amt[max(match(cld_amt, cld.amt$id_class))]$id_class, cld_amt_min = cld.amt[min(match(cld_amt, cld.amt$id_class))]$id_class), id]
+  dt.agg <- dt.cld[, .(
+    cld_levels = max(cld_level),
+    cld_hgt_min = min(cld_hgt),
+    cld_hgt_max = max(cld_hgt),
+    cld_amt_max = cld.amt[max(match(cld_amt, cld.amt$id_class))]$id_class,
+    cld_amt_min = cld.amt[min(match(cld_amt, cld.amt$id_class))]$id_class), id]
 
   dt.cast <- data.table::dcast(dt.cld, id ~ cld_level, value.var = metar.vars.cld)
   setkey(dt.cast, id)
@@ -333,32 +353,36 @@ metar_clouds <- function(cld){
 #' @param rvr METAR RVR string
 #' @export
 #' @examples
-#' metar_rvr(rvr = "R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U")
+#' metar_rvr(rvr = c("R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U", "R14/P2000N", "R08R/3000VP6000FT", "R22/0700D", "", "R18L/290050"))
 #'
 metar_rvr <- function(rvr){
-  metar.vars.rvr <- list(
-  rwy = list(name = "Runway", type = "character", drop = F),
-  rwr_min_exc = list(name = "RVR Min. Exceed.", type = "character", drop = F),
-  rvr_min = list(name = "RVR Min.", type = "integer", drop = F),
-  rwr_max_exc = list(name = "RVR Max Exceed.", type = "character", drop = F),
-  rvr_tend = list(name = "RVR Tendency", type = "character", drop = F),
-  rwr_max = list(name = "RVR Max.", type = "integer", drop = F),
-  rvr_unit = list(name = "RVR Unit", type = "character", drop = F)
-)
-  m <- str_match_all(rvr, "(R([0-9\\/CRL]{2,3})\\/(P|P|M|\\/)?([0-9\\/]{4})(D|U|N)?V?(VP|P|M)?([0-9]{4})?(FT|D|U|N)?){1,4}")
-  dt.rvr <- data.table::rbindlist(lapply(seq_along(m), FUN = function(i){
-    dat <- rbind(m[[i]][,-1])
-    if(nrow(dat) == 0) dat <- rbind(rep(NA, 8))
-    dt <- data.table::setnames(data.frame(dat), c("rvr_str", names(metar.vars.rvr)))
-    dt$rvr_group <- seq_len(nrow(dat))
-    dt$id <- i
-    dt
-  }))
-  void <- lapply(names(metar.vars.rvr), function(i){
-    fct <- paste("as", metar.vars.rvr[[i]]$type, sep = ".")
-    dt.rvr[, (i) := lapply(.SD, fct), .SDcols = c(i)]
+  metar.vars.rvr.in <- c("rwy", "rvr_min_exc", "rvr_min", "rvr_tend_min", "rvr_max_exc", "rvr_max",  "rvr_tend_max", "rvr_unit")
+  metar.vars.rvr <- c("rwy", "rvr_min_exc", "rvr_min", "rvr_max_exc", "rvr_max", "rvr_unit", "rvr_tend")
+  # U: increasing, N: Neutral, D: Decreasing
+
+  dt.rvr <- data.table(id = seq_along(rvr))
+
+  m <- str_match_all(rvr, "(?:R([0-9\\/CRL]{2,3})\\/(P|M|\\/)?([0-9\\/]{4})(D|U|N)?V?(P|M)?([0-9]{4})?(D|U|N)?(FT)?){1,4}")
+  dt <- data.table(do.call(rbind, m)[,-1])
+  setnames(dt, metar.vars.rvr.in)
+  dt$id <- rep(seq_along(m), sapply(m, nrow))
+  dt[, `:=`(rvr_tend = pmax(rvr_tend_min, rvr_tend_max, na.rm = TRUE), rvr_group = seq_len(.N)), id]
+  dt[, `:=`(rvr_tend_min = NULL, rvr_tend_max = NULL)]
+
+  void <- lapply(metar.vars.rvr, function(i){
+    def <- metar.para[id_para == i]
+    # Convert type
+    suppressWarnings(dt[, (i) := do.call(paste0("as.", def$type_para), list(dt[[i]]))])
   })
-  dt.out <- data.table::dcast(dt.rvr[], id ~ rvr_group, value.var = names(metar.vars.rvr))
+
+   # Convert to meters
+  dt[, rvr_unit := fifelse(is.na(rvr_unit), "M", rvr_unit)]
+  dt[,`:=`(rvr_min = fifelse(rvr_unit == "FT", rvr_min*0.3048, rvr_min))]
+  dt[,`:=`(rvr_max = fifelse(rvr_unit == "FT", rvr_max*0.3048, rvr_max))]
+
+
+  dt.cast <- data.table::dcast(dt, id ~ rvr_group, value.var = metar.vars.rvr)
+  dt.out <- merge(dt.rvr, dt.cast, by = "id", all = TRUE)
   dt.out[, `:=`(id = NULL)][]
 }
 
