@@ -40,8 +40,25 @@ dt <- data.table(active = TRUE, icao = unique(str_extract(dt, "(?<=COR|METAR|\\s
 metar.stn <- merge(metar.stn, dt, by = "icao", all.x = TRUE)
 metar.stn[, active := fifelse(is.na(active), FALSE, TRUE)]
 
+# Find missing
+x <- do.call(c, sapply(0:23, function(i) metar_latest(id_icao = "", report.hour = i)))
+x <- unique(x)
+dat.parsed <- parse_metar(x = x)
+xxx <- unique(dat.parsed[is.na(ap_name),1:6])
+stn.1 <- read_station(fi.icao = paste(xxx$icao, collapse =  "|"))
+setnames(stn.1, c("ctry", "ap_name", "icao", "synop", "iata", "lon", "lat", "elev"))
+stn.1[, `:=`(active = TRUE, ap_name_long = ap_name, iata = NULL, synop = NULL)]
+
+stn.1 <- stn.1[!icao %in% metar.stn$icao] # Avoid duplicates
+
+stn.1[icao == "EPRA"]
+metar.stn[icao == "EPRA"]
+
+
+metar.stn <- rbind(metar.stn, stn.1, fill = TRUE)
+
 # Test
-metar.stn[ctry == "CH" & active == TRUE]
+metar.stn[ctry == "BA" & active == TRUE]
 
 # Save
 usethis:::use_data(metar.stn, overwrite = TRUE, internal = FALSE)

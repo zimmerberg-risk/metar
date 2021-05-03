@@ -222,8 +222,9 @@ metar_pw <- function(pw, DC = FALSE, PH = FALSE){
     ST = "DS|SS|PO",
     FZ = "FZ",
     PP_HEAVY = sprintf("\\+[:alpha:]+(?:%s)", paste(metar.ph[id_ph_subgrp %in% c("SOLID", "LIQUID")]$id_ph, collapse = "|")),
-    PP_SOLID = paste(metar.ph[id_ph_subgrp == "SOLID"]$id_ph, collapse = "|"),
+    PP_SOLID = sprintf("(?<!DR|BL)(?:%s)", paste(metar.ph[id_ph_subgrp == "SOLID"]$id_ph, collapse = "|")),
     PP_LIQUID = sprintf("SH\\b|%s", paste(metar.ph[id_ph_subgrp == "LIQUID"]$id_ph, collapse = "|")),
+    DR = "DR|BL",
     FG = "(?<!MI|PR|BC)FG",
     FZ_PP = "FZ(?!FG)",
     FZ_FG = "FZFG",
@@ -260,7 +261,7 @@ metar_pw <- function(pw, DC = FALSE, PH = FALSE){
 
   # Significant weather GR > TS > ST > FZ > PP_HEAVY > PP_SOLID > PP_LiQUID > FG > vc_TS > vc_FG
   dt.pw[, NOSIG := 1]
-  sig.wx <- c("GR", "TS", "ST", "FZ", "PP_HEAVY", "PP_SOLID", "PP_LIQUID", "FG", "vc_TS", "vc_FG", "re_TS", "re_PP", "NOSIG")
+  sig.wx <- c("GR", "TS", "ST", "FZ", "PP_HEAVY", "PP_SOLID", "PP_LIQUID", "DR", "FG", "vc_TS", "vc_FG", "re_TS", "re_PP", "NOSIG")
   dt.pw[, sigwx := sig.wx[apply(!is.na(as.matrix(.SD)), 1, which.max)], .SDcols = sig.wx]
 
   dt.comb <- dt.pw

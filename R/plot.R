@@ -96,7 +96,7 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
 
   # Average time interval
   dt <- as.numeric(stats::median(diff(dat$time), na.rm = TRUE), "secs")
-  time.ticks <- pretty(dat$time, 11)
+  time.ticks <- pretty(dat$time, 8)
 
   # Layout
   fill.alpha <- 0.2
@@ -194,7 +194,7 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
 
 
   # Vis /Signif Weather
-  dt.sigwx <- metar.class[id_para == "sigwx"][c(1:8)]
+  dt.sigwx <- metar.class[id_para == "sigwx"][c(1:10)]
   sigwx.id <- dt.sigwx$id_class
   sigwx.name <- dt.sigwx$short_class
   sigwx.col <- dt.sigwx$col
@@ -209,8 +209,9 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
   title.2.txt <- c("Sig. Weather: ", paste0(" ", sigwx.name))
   title.2.col <-  c("black", sigwx.col)
 
+
   graphics::par(mai = c(0.3, 0.5, 0.4, 0.1)*cex)
-  plot(dat$time, dat$vis, ylim = c(0.1, 25), type = "n", ann = FALSE, log = "y",  xaxs="i", yaxt = "n", xaxt = "n")
+  plot(dat$time, dat$vis, ylim = c(0.1, 25), type = "n", ann = FALSE, log = "y",  xaxs="i", xaxt = "n", yaxt = "n")
   multicolor.title(title.1.txt, title.1.col, adj = 0, line = .70, font = 2)
   multicolor.title(title.2.txt, title.2.col, adj = 1, line = .70, font = 2)
   # Weather
@@ -218,7 +219,8 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
   graphics::rect(xleft = dat.pw$time, xright = shift(dat.pw$time, type = "lag"), ybottom = ylim[1], ytop = ylim[2],
                  col = set_alpha(dat.pw$pw_col, 0.75), lty = 0)
   graphics::grid(nx = NA, ny = NULL)
-  graphics::axis.POSIXct(1, dat$time, time.ticks, tck=1, lty = "dotted", col = "lightgray")
+  axis.POSIXct(1, x =  dat$time, at = time.ticks, tck=1, lty = "dotted", col = "lightgray")
+
   graphics::axis(2, c(100, 300, 1000, 3000, 10000)/1e3, tick = TRUE, las = 2, col.ticks	= "black")
   abline(h = c(100, 300, 1000, 3000, 10000)/1e3, lty = 3, col = "lightgray")
   graphics::lines(dat$time, dat$vis/1e3, type = "s")

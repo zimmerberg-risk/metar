@@ -1,5 +1,5 @@
-# x <- rbindlist(metar.vars, fill = T, idcol = "id_para")
-# write.table(x, "clipboard", sep="\t", row.names=FALSE, na = "")
+# xxx <- rbindlist(metar.vars, fill = T, idcol = "id_para")
+# write.table(xxx, "clipboard", sep="\t", row.names=FALSE, na = "")
 #
 # write.table(data.frame(x = metar.test), "clipboard", sep="\t", row.names=FALSE, na = "")
 
@@ -10,7 +10,7 @@ library(maps)
 
 # ---------------------------------------- Latest -----------------------------------------------
 
-x <- metar_latest(id_icao = "", report.hour = 18)
+x <- metar_latest(id_icao = "", report.hour = 9)
 dat.parsed <- parse_metar(x = x)
 dt <- metar_validate(dat.parsed, set.na = TRUE)
 
@@ -18,10 +18,6 @@ dt.pw <- metar_pw(pw = dt$pw)
 dt.cld <- metar_clouds(cld = dt$cld)
 dt.rvr <- metar_rvr(rvr = dt$rvr)
 dt.comb <- cbind(dt, dt.pw, dt.cld, dt.rvr)
-
-
-dt.comb[icao == "ZMUB"]
-
 
 # unique(dt$rwc)
 # unique(dt$rvr)
@@ -31,7 +27,10 @@ dt.comb[icao == "ZMUB"]
 # head(dt.comb[, .(icao, ctry, ap_name, SIGWX, metar)][SIGWX != "NOSIG"], 30)
 #
 # dt.comb[, .N, SIGWX]
-# dt.comb[ctry == "FR"]
+# dat.parsed[ctry == "PL"]
+
+metar.stn[ctry == "BA"]
+metar.stn[icao == "EPRA"]
 
 # ---------------------------------------- Leaflet Numerical -----------------------------------------------
 library(leaflet)
@@ -47,10 +46,10 @@ leaflet(data = dt.comb) %>%
 # ---------------------------------------- Leaflet Categorical -----------------------------------------------
 
 id.para <- "sigwx"
-levels <- metar.class[id_para == "sigwx"][1:8]$id_class
+levels <- metar.class[id_para == "sigwx"][1:10]$id_class
 dt.map <- dt.comb[sigwx %in% levels]
 dt.map[, sigwx := factor(sigwx, levels)]
-pal <- colorFactor(palette = metar.class[id_para == "sigwx"][1:8]$col, levels = levels, na.color = "#eeefff")
+pal <- colorFactor(palette = metar.class[id_para == "sigwx"][1:10]$col, levels = levels, na.color = "#eeefff")
 
 leaflet(data = dt.map) %>%
   addTiles() %>%
@@ -112,12 +111,12 @@ id.folder <- sprintf("C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/Dat
 
 void <- lapply(stn[], function(id.icao){
 
-  # id.icao <- "RJAW"
+  # id.icao <- "LSZH"
 
   cat(id.icao, " ", match(id.icao, stn), "\n")
 
-  date.start <-  Sys.Date() - 31
-  date.end <- Sys.Date()
+  date.start <- "2018-04-01" #Sys.Date() - 31
+  date.end <- "2018-04-29" #Sys.Date()
   dat.metar <- read_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end)
   if(nrow(dat.metar) == 0) return(NULL)
   dat.parsed <- parse_metar(x = dat.metar$metar, date = dat.metar$valid)

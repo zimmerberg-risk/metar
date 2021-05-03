@@ -5,7 +5,7 @@
 \alias{metar.class}
 \title{METAR Parameter Classes}
 \format{
-An object of class \code{data.table} (inherits from \code{data.frame}) with 53 rows and 10 columns.
+An object of class \code{data.table} (inherits from \code{data.frame}) with 54 rows and 10 columns.
 }
 \usage{
 metar.class
