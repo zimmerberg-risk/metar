@@ -7,7 +7,7 @@
 * `metar_parse` returns station meta data
 * `metar_parse` splits up PW string into PW (Current), RE (Recent) and VC (Vicinity)
 * `plot_metargram` is able to handle data gaps
-* `metar_validation` performs simple validation checks (e. g. dew point > temperature) 
+* `metar_validation` performs simple validation checks (e. g. dismisses dew point > temperature) 
 
 ## metar 0.3.1
 * Intermediate update

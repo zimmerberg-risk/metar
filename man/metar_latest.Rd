@@ -4,7 +4,7 @@
 \alias{metar_latest}
 \title{Get METARs from NOAA cycle files}
 \usage{
-metar_latest(id_icao = NULL, latest.only = TRUE, report.hour = NULL)
+metar_latest(id_icao = "", latest.only = TRUE, report.hour = NULL)
 }
 \arguments{
 \item{id_icao}{ICAO identifiery, e. g. YSSY}

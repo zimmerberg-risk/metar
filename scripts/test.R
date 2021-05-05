@@ -10,7 +10,7 @@ library(maps)
 
 # ---------------------------------------- Latest -----------------------------------------------
 
-x <- metar_latest(id_icao = "", report.hour = 9)
+x <- metar_latest(id_icao = "", report.hour = 5)
 dat.parsed <- parse_metar(x = x)
 dt <- metar_validate(dat.parsed, set.na = TRUE)
 
@@ -34,7 +34,7 @@ metar.stn[icao == "EPRA"]
 
 # ---------------------------------------- Leaflet Numerical -----------------------------------------------
 library(leaflet)
-id.para <- "ff"
+id.para <- "td"
 pal <- colorNumeric("Spectral", reverse = TRUE, domain = NULL, na.color = "#eeefff")
 leaflet(data = dt.comb) %>%
   addTiles() %>%
@@ -85,7 +85,7 @@ legend("bottomleft", legend = brks[-1], title = id.para,fill = cols)
 
 # ---------------------------------------- World -----------------------------------------------
 
-metar_stn(fi.name = "^thule")
+metar_stn(fi.name = "^wien")
 
 stn <- metar_stn(fi.lat = c(40, 50), fi.lon = c(5, 15))$icao
 stn <- metar_stn(fi.ctry = "Switz")$icao
@@ -115,8 +115,8 @@ void <- lapply(stn[], function(id.icao){
 
   cat(id.icao, " ", match(id.icao, stn), "\n")
 
-  date.start <- "2018-04-01" #Sys.Date() - 31
-  date.end <- "2018-04-29" #Sys.Date()
+  date.start <- "2017-12-01" #Sys.Date() - 14  "2021-04-01"
+  date.end <- "2018-05-05" #Sys.Date()"2018-05-29"
   dat.metar <- read_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end)
   if(nrow(dat.metar) == 0) return(NULL)
   dat.parsed <- parse_metar(x = dat.metar$metar, date = dat.metar$valid)

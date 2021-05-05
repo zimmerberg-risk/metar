@@ -140,7 +140,7 @@ read_station <- function(fi.name = ".+", fi.icao = ".+", fi.ctry = ".+", fi.lat 
 #' metar_latest(id_icao = "LSZH")
 #' metar_latest(id_icao = "EG")
 #'
-metar_latest <- function(id_icao = NULL, latest.only = TRUE, report.hour = NULL){
+metar_latest <- function(id_icao = "", latest.only = TRUE, report.hour = NULL){
 
   if(is.null(report.hour)){
     time.local <- Sys.time()
@@ -150,7 +150,17 @@ metar_latest <- function(id_icao = NULL, latest.only = TRUE, report.hour = NULL)
   }
 
   url.data <- sprintf("https://tgftp.nws.noaa.gov/data/observations/metar/cycles/%02dZ.TXT", report.hour)
-  dt.lines <- readr::read_lines(url.data, locale = )
+  n <- 0
+  download <- FALSE
+
+  # Download (try up to 6 times)
+  while(n < 6 & download == FALSE){
+    dt.lines <- readr::read_lines(url.data)
+    if(length(dt.lines) > 100) download <- TRUE
+    n <<- n + 1
+    Sys.sleep(0.1)
+  }
+
   reports <- dt.lines[grepl("^([A-Z]{4}).+", dt.lines)]
 
   # Check and exclude invalid UTF-8
