@@ -36,8 +36,8 @@ usethis:::use_data(
 )
 devtools::document()
 devtools::check()
-# devtools::build_readme()
-# devtools::build_vignettes()
+devtools::build_readme()
+devtools::build_vignettes(clean = T)
 
 detach("package:metar", unload = TRUE)
 remove.packages("metar")
@@ -46,7 +46,7 @@ devtools::install_local(p, force = TRUE, upgrade = "never")
 library(metar)
 
 # https://github.com/m-saenger/metar
-devtools::install_github("m-saenger/metar", upgrade = "never")
+devtools::install_github("m-saenger/metar", upgrade = "never", build_manual = T, build_vignettes = T)
 
 # git tag 0.4.0
 # git push --tags

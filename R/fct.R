@@ -345,7 +345,8 @@ metar_clouds <- function(cld){
 #' @param rvr METAR RVR string
 #' @export
 #' @examples
-#' metar_rvr(rvr = c("R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U", "R14/P2000N", "R08R/3000VP6000FT", "R22/0700D", "", "R18L/290050"))
+#' metar_rvr(rvr = c("R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U", "R14/P2000N",
+#' "R08R/3000VP6000FT", "R22/0700D", "", "R18L/290050"))
 #'
 metar_rvr <- function(rvr){
   metar.vars.rvr.in <- c("rwy", "rvr_min_exc", "rvr_min", "rvr_tend_min", "rvr_max_exc", "rvr_max",  "rvr_tend_max", "rvr_unit")

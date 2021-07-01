@@ -10,11 +10,11 @@ library(maps)
 
 # ---------------------------------------- Latest -----------------------------------------------
 
-x <- metar_latest(id_icao = "", report.hour = 5)
+x <- metar_latest(id_icao = "", report.hour = 22)
 dat.parsed <- parse_metar(x = x)
 dt <- metar_validate(dat.parsed, set.na = TRUE)
 
-dt.pw <- metar_pw(pw = dt$pw)
+dt.pw <- metar_pw(pw = dt$pw, PH = T)
 dt.cld <- metar_clouds(cld = dt$cld)
 dt.rvr <- metar_rvr(rvr = dt$rvr)
 dt.comb <- cbind(dt, dt.pw, dt.cld, dt.rvr)
@@ -29,12 +29,9 @@ dt.comb <- cbind(dt, dt.pw, dt.cld, dt.rvr)
 # dt.comb[, .N, SIGWX]
 # dat.parsed[ctry == "PL"]
 
-metar.stn[ctry == "BA"]
-metar.stn[icao == "EPRA"]
-
 # ---------------------------------------- Leaflet Numerical -----------------------------------------------
 library(leaflet)
-id.para <- "td"
+id.para <- "tt"
 pal <- colorNumeric("Spectral", reverse = TRUE, domain = NULL, na.color = "#eeefff")
 leaflet(data = dt.comb) %>%
   addTiles() %>%
@@ -85,7 +82,7 @@ legend("bottomleft", legend = brks[-1], title = id.para,fill = cols)
 
 # ---------------------------------------- World -----------------------------------------------
 
-metar_stn(fi.name = "^wien")
+metar_stn(fi.name = "^berli")
 
 stn <- metar_stn(fi.lat = c(40, 50), fi.lon = c(5, 15))$icao
 stn <- metar_stn(fi.ctry = "Switz")$icao
@@ -115,8 +112,9 @@ void <- lapply(stn[], function(id.icao){
 
   cat(id.icao, " ", match(id.icao, stn), "\n")
 
-  date.start <- "2017-12-01" #Sys.Date() - 14  "2021-04-01"
-  date.end <- "2018-05-05" #Sys.Date()"2018-05-29"
+  date.end <- as.Date("2021-07-01") #Sys.Date()"2018-05-29"
+  date.start <- date.end - 180 #Sys.Date() - 14  "2021-04-01"
+
   dat.metar <- read_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end)
   if(nrow(dat.metar) == 0) return(NULL)
   dat.parsed <- parse_metar(x = dat.metar$metar, date = dat.metar$valid)
@@ -130,7 +128,7 @@ void <- lapply(stn[], function(id.icao){
   dev.off()
 
 })
-
+dat.parsed[, .SD[which.max(tt)]]
 # Map
 
 dat <- metar_latest(id_icao = "")

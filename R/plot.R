@@ -230,5 +230,3 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
   graphics::par(def.par)  #- reset to default
 
 }
-# extrafont::loadfonts(device = "win")
-# extrafont::fonts()
