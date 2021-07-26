@@ -10,7 +10,7 @@ library(maps)
 
 # ---------------------------------------- Latest -----------------------------------------------
 
-x <- metar_latest(id_icao = "", report.hour = 22)
+x <- metar_latest(id_icao = "", report.hour = 20)
 dat.parsed <- parse_metar(x = x)
 dt <- metar_validate(dat.parsed, set.na = TRUE)
 
@@ -31,7 +31,7 @@ dt.comb <- cbind(dt, dt.pw, dt.cld, dt.rvr)
 
 # ---------------------------------------- Leaflet Numerical -----------------------------------------------
 library(leaflet)
-id.para <- "tt"
+id.para <- "ff"
 pal <- colorNumeric("Spectral", reverse = TRUE, domain = NULL, na.color = "#eeefff")
 leaflet(data = dt.comb) %>%
   addTiles() %>%
