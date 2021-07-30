@@ -10,7 +10,7 @@ library(maps)
 
 # ---------------------------------------- Latest -----------------------------------------------
 
-x <- metar_latest(id_icao = "", report.hour = 18)
+x <- metar_latest(id_icao = "", report.hour = 12)
 dat.parsed <- parse_metar(x = x)
 dt <- metar_validate(dat.parsed, set.na = TRUE)
 
@@ -108,12 +108,12 @@ id.folder <- sprintf("C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/Dat
 
 void <- lapply(stn[], function(id.icao){
 
-  # id.icao <- "LSZH"
+  id.icao <- "SBCH"
 
   cat(id.icao, " ", match(id.icao, stn), "\n")
 
-  date.end <- as.Date("2021-07-01") #Sys.Date()"2018-05-29"
-  date.start <- date.end - 180 #Sys.Date() - 14  "2021-04-01"
+  date.end <- as.Date("2021-07-31") #Sys.Date()"2018-05-29"
+  date.start <- date.end - 60 #Sys.Date() - 14  "2021-04-01"
 
   dat.metar <- read_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end)
   if(nrow(dat.metar) == 0) return(NULL)
