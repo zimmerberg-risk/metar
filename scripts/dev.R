@@ -10,7 +10,7 @@ library(metar)
 dir.base <- "C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/Data/metar"
 dir.data <- file.path(dir.base, "data")
 p <- file.path(dir.data, "10Z.TXT")
-dt.noaa <- metar_read_noaa(hour = 12, latest.only = T)
+dt.noaa <- read_metar_noaa(hour = 5, latest.only = T)
 grep("SN\\b", dt.noaa$metar, value = T) # CAVOK|NSC|NCD|WXNIL|CLR|SKC|NSW
 
 ## --------------------------------------------------- Speed  ---------------------------------------------------
@@ -25,10 +25,11 @@ vroom::vroom_write(dt.grp, "C:/Users/mat/OneDrive - Zimmerberg Risk Analytics Gm
 
 parse_metar_cld(x = dt.test$cld)
 
-
-x <- read_metar_mesonet("SBPA")
-xx <- parse_metar(x$metar)
-plot_metargram(xx)
+x1 <- read_metar_mesonet("SBPA", date_start = "2021-07-15")
+x2 <- parse_metar_grp(x1$metar, x1$valid) #dt.noaa$metar
+x3 <- parse_metar_pw(x2$pw)
+x2 <- metar.stn[x2, on = "icao"]
+plot_metargram(dat = cbind(x2, x3))
 
 ## --------------------------------------------------- Tests  ---------------------------------------------------
 expression({

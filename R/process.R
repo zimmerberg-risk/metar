@@ -8,7 +8,8 @@
 #' @examples
 #' x <- c("TS", "+TSRA VCTS", "SNGRRA VCFG")
 #' parse_metar_pw(x)
-#' x
+#' m <- parse_metar_grp(metar.test$code)
+#' parse_metar_pw(m$pw)
 #'
 parse_metar_pw <- function(x){
   # Debug
@@ -64,10 +65,6 @@ parse_metar_pw <- function(x){
 
 }
 
-x1 <- parse_metar_grp(dt.noaa$metar)
-x2 <- parse_metar_pw(x1$pw)
-
-
 #' Parse cloud groups
 #'
 #' @author M. Saenger
@@ -76,40 +73,48 @@ x2 <- parse_metar_pw(x1$pw)
 #' @examples
 #' x <- c("SCT009 BKN029 OVC045CB", "SCT009CB OVC045", "NSC")
 #' parse_metar_cld(x)
+#' m <- parse_metar_grp(metar.test$code)
+#' parse_metar_cld(x = m$cld)
 #'
 parse_metar_cld <- function(x){
 
+  n <- 5 # Number of cloud groups
+
   # Meta
   cld.amt <- metar.class[id_para == "cld_amt"]
-  metar.vars.cld <- c("cld_grp", "cld_amt", "cld_hgt", "cld_type")
+  cld.amt.num <- cld.amt$num_class
+  cld.amt.id <- cld.amt$id_class
 
-  m <- str_match_all(str_trim(x), "((?:CLR|NCD|NSC|SKC)|(?:FEW|SCT|BKN|OVC|[\\/]{3}))([0-9\\/]{3})?([A-Z]{2,3}|[\\/]{3})?")
+  # Cloud groups (max: 5)
+  grp <- str_split_fixed(x, "\\s", n = n)
+  cld_hgt <- rbind(apply(grp, 2, str_extract, pattern = "[0-9]+"))
+  class(cld_hgt) <- "numeric"
+  colnames(cld_hgt) <- paste("cld_hgt", 1:n, sep = "_")
+  cld_amt <- rbind(apply(grp, 2, str_extract, pattern = "^[A-Z]{3}"))
+  colnames(cld_amt) <- paste("cld_amt", 1:n, sep = "_")
+  cld_type <- rbind(apply(grp, 2, str_extract, pattern = "(TCU|CB)$"))
+  colnames(cld_type) <- paste("cld_type", 1:n, sep = "_")
 
-  id <- seq_along(m)
-  id <- rep(id, lapply(m, nrow))
-  cld_level <- do.call(c, lapply(m, function(i) 1:nrow(i)))
+  # Cloud type
+  TCU <- str_detect(x, "TCU")*1
+  TCU[is.na(TCU)] <- 0
+  CB <- str_detect(x, "CB")
+  CB[is.na(CB)] <- 0
 
-  dt.cld <- data.table(do.call(rbind, m))
-  setnames(dt.cld,  c("cld_grp", "cld_amt", "cld_hgt", "cld_type"))
-  dt.cld[, `:=`(id = id, cld_level = cld_level)]
 
-   # Ceiling
-  dt.ceil <- dt.cld[cld_amt %in% c("BKN", "OVC"), .(ceiling = min(cld_hgt)), id]
+  # Heights, ceiling
+  ceil <- as.numeric(str_extract(x, "(?<=(BKN|OVC))[0-9]{3}"))
+  cld_hgt_min <- apply(cld_hgt, 1, function(i) if(all(is.na(i))) NA else min(i, na.rm = T))
+  cld_hgt_max <- apply(cld_hgt, 1, function(i) if(all(is.na(i))) NA else max(i, na.rm = T))
 
-  setkey(dt.ceil, id)
-  dt.agg <- dt.cld[, .(
-    cld_levels = max(cld_level),
-    cld_hgt_min = min(cld_hgt),
-    cld_hgt_max = max(cld_hgt),
-    cld_amt_max = cld.amt[max(match(cld_amt, cld.amt$id_class))]$id_class,
-    cld_amt_min = cld.amt[min(match(cld_amt, cld.amt$id_class))]$id_class), id]
+  # Cloud amount
+  cld_lay <- apply(cld_amt, 1, function(i) sum(!is.na(i)))
+  cld_amt_num <- array(match(cld_amt, cld.amt.id), dim = dim(cld_amt))
+  cld_amt_max <- cld.amt.id[apply(cld_amt_num, 1, function(i) if(all(is.na(i))) NA else max(i, na.rm = T))][1:length(cld_lay)]
+  cld_amt_min <- cld.amt.id[apply(cld_amt_num, 1, function(i) if(all(is.na(i))) NA else min(i, na.rm = T))][1:length(cld_lay)]
 
-  dt.cast <- data.table::dcast(dt.cld, id ~ cld_level, value.var = metar.vars.cld)
-  setkey(dt.cast, id)
-
-  data.table::dcast(dt.cld, id ~ cld_level, value.var = c("cld_grp", "cld_amt", "cld_hgt", "cld_type"))
+  data.table(cld_grp = x,  cld_lay, cld_hgt_min, cld_hgt_max, cld_amt_min, cld_amt_max, ceil, TCU, CB, cld_amt, cld_hgt, cld_type)
 }
-
 
 #' Parse runway visibility groups
 #'
@@ -117,12 +122,34 @@ parse_metar_cld <- function(x){
 #' @param x cloud string
 #' @export
 #' @examples
-#' x <- c("R09R/0900N R27L/0750N")
+#' x <- c("R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U", "R08R/3000VP6000FT", "R22/0700D", "", "R18L/290050")
 #' parse_metar_rvr(x)
 #'
-parse_metar_rvr <- function(){
+parse_metar_rvr <- function(x){
+
+  n <- 5 # Number of cloud groups
+
+  # RVR groups (max: 5)
+  grp <- str_split_fixed(x, "\\s", n = n)
+
+  rwy <- rbind(apply(grp, 2, str_extract, pattern = "(?<=R)([0-9]{2}[CLR]?)"))
+  colnames(rwy) <- paste("rwy", 1:n, sep = "_")
+
+  rvr_min <- rbind(apply(grp, 2, str_extract, pattern = "(?<=\\/[PP]?)([0-9]{4})(?=[DUN]?)"))
+  class(rvr_min) <- "numeric"
+  colnames(rvr_min) <- paste("rvr_min", 1:n, sep = "_")
+
+  rvr_max <- rbind(apply(grp, 2, str_extract, pattern = "(?<=\\/[PP]?)([0-9]{4})(?=[DUN]?)"))
+
+  rvr_trend <- rbind(apply(grp, 2, str_extract, pattern = "[DUN]"))
 
 }
+
+
+m <- parse_metar_grp(dt.noaa$metar)
+xxx <- parse_metar_cld(x = rep(m$cld, 1))
+yyy <- parse_metar_rvr(x = rep(m$rvr, 1))
+
 
 #' Parse runway conditions groups
 #'

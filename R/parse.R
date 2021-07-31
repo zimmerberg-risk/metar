@@ -193,15 +193,15 @@ parse_metar_grp <- function(x, t = NULL, yyyy = year(Sys.Date()), mm = month(Sys
   time <- str_split_fixed(wx[,1], "(?<=[0-9A-Z]{4})\\s", 2)
 
   grp <- as.data.table(cbind(time[,1], time[,2], cor[,1], auto[,1], cor[,2], code[,2], tempo[,2], becmg[,2],  rmk[,2]))
-  setnames(grp, c("id_icao", "time_valid", "cor", "auto", "wx", "code", "tempo", "becmg", "rmk")) #
+  setnames(grp, c("icao", "time", "cor", "auto", "wx", "code", "tempo", "becmg", "rmk")) #
 
   # Process
   grp[, `:=`(
     auto = auto != "",
     cor = cor != "",
-    time_valid = if(!is.null(t)) t else as.POSIXct(paste0(yyyy, sprintf("%02d", mm), time_valid), format = "%Y%m%d%H%M", tz = "GMT")
+    time = if(!is.null(t)) t else as.POSIXct(paste0(yyyy, sprintf("%02d", mm), time), format = "%Y%m%d%H%M", tz = "GMT")
   )]
-  setcolorder(grp, c("id_icao", "time_valid"))
+  setcolorder(grp, c("icao", "time"))
 
   #WX
   wx <- parse_metar_wx(x = grp$wx)
