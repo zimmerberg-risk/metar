@@ -4,6 +4,9 @@ library(data.table)
 
 # https://r-pkgs.org/data.html
 
+# https://www.aviationweather.gov/docs/metar/stations.txt
+#
+
 ## --------------------------- Meta Data ------------------------------
 file <- "data-raw/metar_config.xlsx"
 sheets <- readxl::excel_sheets(file)
@@ -17,14 +20,41 @@ l <- lapply(sheets, function(i){
   do.call("use_data", list(as.name(n), overwrite = TRUE, internal = FALSE))
 })
 
+read_aviationweather <- function(){
+  url.station <- "https://www.aviationweather.gov/docs/metar/stations.txt"
+  col.names <- c("state", "name", "icao", "iata", "synop", "lat_deg", "lat_min", "lon_deg", "lon_min", "z", "M",  "N",  "V",  "U",  "A", "C", "ctry")
+  col.start <- c(1, 4, 21, 27, 33, 40, 43, 48, 52, 56, 63, 66, 69, 72, 75, 80, 82)
+  col.pos <- readr::fwf_positions(col.start, c(col.start[-1] - 1, NA), col_names = col.names)
+
+  station.lines <- readr::read_lines(url.station, skip = 39)
+  station.lines <- station.lines[sapply(station.lines, nchar) > 80]
+
+  dt.station <- as.data.table(readr::read_fwf(station.lines, col_positions = col.pos))
+
+  # Process lon/lat minutes
+  dt.station[, c("lat_num", "ns") := as.data.frame(str_match(lat_min, "([0-9]+)(N|S)")[,2:3]) ]
+  dt.station[, c("lon_num", "we") := as.data.frame(str_match(lon_min, "([0-9]+)(W|E)")[,2:3]) ]
+  dt.station[, `:=`(
+    x = fifelse(we == "E", as.numeric(lon_deg) + as.numeric(lon_num)/60, -(as.numeric(lon_deg) + as.numeric(lon_num)/60)),
+    y = fifelse(ns == "N", as.numeric(lat_deg) + as.numeric(lat_num)/60, -(as.numeric(lat_deg) + as.numeric(lat_num)/60))
+  )]
+
+  dt.station[, .(ctry, name, icao, synop, iata, x, y, z)]
+}
 
 ## --------------------------- Airport Data ------------------------------
-dt.stn <- fread("data-raw/master-location-identifier-database-202103_standard.csv", skip = 4, encoding = "Latin-1",
-                na.strings = c("", "-9999"))
+dt.stn.1 <- read_aviationweather()
 
-metar.stn <- dt.stn[!is.na(icao), .(icao, ctry = country2, ctry3 = country3, ctry_name = country, region, ap_name_long = place_name, lon, lat, elev )]
-metar.stn[, ap_name := trimws(tstrsplit(ap_name_long, "\\|")[[1]])]
-metar.stn <- metar.stn[!is.na(icao) & !is.na(lat)]
+setnames(dt.stn.1, old = c("name", "x", "y", "z"), new = c("ap_name", "lon", "lat", "elev"))
+
+dt.stn.2 <- fread("data-raw/master-location-identifier-database-202103_standard.csv", skip = 4, encoding = "Latin-1",
+                na.strings = c("", "-9999"))
+dt.stn.2 <- dt.stn.2[!is.na(icao), .(icao, ctry = country2, ctry3 = country3, ctry_name = country, region, ap_name_long = place_name, lon, lat, elev )]
+dt.stn.2[, ap_name := trimws(tstrsplit(ap_name_long, "\\|")[[1]])]
+dt.stn.2 <- metar.stn[!is.na(icao) & !is.na(lat)]
+
+# Combine
+metar.stn <- rbind(dt.stn.1, dt.stn.2, fill = T)
 
 # Duplicated ICAO
 metar.stn <- metar.stn[!duplicated(metar.stn$icao)]
@@ -32,38 +62,21 @@ metar.stn <- metar.stn[!duplicated(metar.stn$icao)]
 # Find active stn
 dat.list <- lapply(0:23, function(h){
   print(h)
-  metar_latest(id_icao = "", report.hour = h)
+  read_metar_noaa(hour = h, latest.only = T)
 })
-dt <- do.call(c, dat.list)
-dt <- data.table(active = TRUE, icao = unique(str_extract(dt, "(?<=COR|METAR|\\s|^)\\b([A-Z0-9]{4})\\b")))
+dt <- rbindlist(dat.list)
+dt.unique <- data.table(active = TRUE, icao = unique(str_sub(dt$metar, 1, 4)))
 
-metar.stn <- merge(metar.stn, dt, by = "icao", all.x = TRUE)
+metar.stn <- merge(metar.stn, dt.unique, by = "icao", all.x = TRUE)
 metar.stn[, active := fifelse(is.na(active), FALSE, TRUE)]
 
-# Find missing
-x <- do.call(c, sapply(0:23, function(i) metar_latest(id_icao = "", report.hour = i)))
-x <- unique(x)
-dat.parsed <- parse_metar(x = x)
-xxx <- unique(dat.parsed[is.na(ap_name),1:6])
-stn.1 <- read_station(fi.icao = paste(xxx$icao, collapse =  "|"))
-setnames(stn.1, c("ctry", "ap_name", "icao", "synop", "iata", "lon", "lat", "elev"))
-stn.1[, `:=`(active = TRUE, ap_name_long = ap_name, iata = NULL, synop = NULL)]
-
-stn.1 <- stn.1[!icao %in% metar.stn$icao] # Avoid duplicates
-
-stn.1[icao == "EPRA"]
-metar.stn[icao == "EPRA"]
-
-
-metar.stn <- rbind(metar.stn, stn.1, fill = TRUE)
-
 # Test
-metar.stn[ctry == "BA" & active == TRUE]
+metar.stn[ctry == "CH" & active == TRUE]
+# stn.1[icao == "EPRA"]
+# metar.stn[icao == "EPRA"]
 
 # Save
 usethis:::use_data(metar.stn, overwrite = TRUE, internal = FALSE)
-
-data(metar.stn)
 
 
 

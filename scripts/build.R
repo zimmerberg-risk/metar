@@ -48,7 +48,7 @@ library(metar)
 # https://github.com/m-saenger/metar
 devtools::install_github("m-saenger/metar", upgrade = "never", build_manual = T, build_vignettes = T)
 
-# git tag 0.4.0
+# git tag 0.9.0
 # git push --tags
 # git tags
 

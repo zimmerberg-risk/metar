@@ -1,3 +1,7 @@
+## metar 0.9.0
+* Complete rebuild
+
+
 ## metar 0.4.0
 
 * Station meta data available within package: `metar.stn`. Column `active` indicates whether station reports on regular basis (Source: http://www.weathergraphics.com/identifiers/)

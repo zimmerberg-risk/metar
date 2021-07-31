@@ -5,3 +5,5 @@
 ^LICENSE.md$
 ^doc$
 ^Meta$
+^data-raw$
+^_config.yml$

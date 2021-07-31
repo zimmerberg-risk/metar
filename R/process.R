@@ -1,4 +1,4 @@
-## --------------------------------------------------- Processing  ---------------------------------------------------
+## --------------------------------------------------- Process  ---------------------------------------------------
 
 #' Parse present wather groups
 #'
@@ -8,8 +8,8 @@
 #' @examples
 #' x <- c("TS", "+TSRA VCTS", "SNGRRA VCFG")
 #' parse_metar_pw(x)
-#' m <- parse_metar_grp(metar.test$code)
-#' parse_metar_pw(m$pw)
+#' m <- parse_metar(metar.test$code)
+#' parse_metar_pw(x = m$pw)
 #'
 parse_metar_pw <- function(x){
   # Debug
@@ -58,12 +58,17 @@ parse_metar_pw <- function(x){
   grp[grp == ""] <- NA_character_
   colnames(grp) <- paste0("pw_grp_", 1:4)
 
-  # Phenomena
-  ph <- str_match(x, sprintf("(%s)", paste(metar.ph$id_ph, collapse = "|")))
+  # Phenomena (unique)
+  ph <- str_remove_all(x, sprintf("(VC[A-Z]{2}|\\s{2}|\\+|\\-|%s)+", paste(metar.dc$id_dc, collapse = "|")))
 
-  data.table(pw = x, pw, grp, sigwx = SIGWX)
+  data.table(pw = x, ph, pw, grp, sigwx = SIGWX)
 
 }
+#
+# m <- parse_metar_grp(dt.noaa$metar)
+# xxx <- parse_metar_pw(x = m$pw)
+# yyy <- parse_metar_rvr(x = rep(m$rvr, 1))
+# parse_metar_rvr(x = NA)
 
 #' Parse cloud groups
 #'
@@ -73,7 +78,7 @@ parse_metar_pw <- function(x){
 #' @examples
 #' x <- c("SCT009 BKN029 OVC045CB", "SCT009CB OVC045", "NSC")
 #' parse_metar_cld(x)
-#' m <- parse_metar_grp(metar.test$code)
+#' m <- parse_metar(metar.test$code)
 #' parse_metar_cld(x = m$cld)
 #'
 parse_metar_cld <- function(x){
@@ -122,7 +127,7 @@ parse_metar_cld <- function(x){
 #' @param x cloud string
 #' @export
 #' @examples
-#' x <- c("R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U", "R08R/3000VP6000FT", "R22/0700D", "", "R18L/290050")
+#' x <- c("R14/P2000N R16/P2000N R28/P2000N R34/1000VP2000U", "R08R/3000VP6000FT", "R22/0700D", "R01/0900VP2000D")
 #' parse_metar_rvr(x)
 #'
 parse_metar_rvr <- function(x){
@@ -139,17 +144,18 @@ parse_metar_rvr <- function(x){
   class(rvr_min) <- "numeric"
   colnames(rvr_min) <- paste("rvr_min", 1:n, sep = "_")
 
-  rvr_max <- rbind(apply(grp, 2, str_extract, pattern = "(?<=\\/[PP]?)([0-9]{4})(?=[DUN]?)"))
+  rvr_max <- rbind(apply(grp, 2, str_extract, pattern = "(?<=V[PM])([0-9]{4})"))
+  class(rvr_max) <- "numeric"
+  colnames(rvr_max) <- paste("rvr_max", 1:n, sep = "_")
+
+  rvr_unit <- str_match(x, "FT")
+  rvr_unit[is.na(rvr_unit)] <- "M"
 
   rvr_trend <- rbind(apply(grp, 2, str_extract, pattern = "[DUN]"))
 
+  data.table(rwy, rvr_min, rvr_max, rvr_unit)
+
 }
-
-
-m <- parse_metar_grp(dt.noaa$metar)
-xxx <- parse_metar_cld(x = rep(m$cld, 1))
-yyy <- parse_metar_rvr(x = rep(m$rvr, 1))
-
 
 #' Parse runway conditions groups
 #'
@@ -160,8 +166,9 @@ yyy <- parse_metar_rvr(x = rep(m$rvr, 1))
 #' x <- c("R02/010070 R06/010070", "R88/090060")
 #' parse_metar_rwy_cond(x)
 #'
-parse_metar_rwy_cond <- function(){
-
+parse_metar_rwy_cond <- function(x){
+  warning("Not implemented, yet")
+  return(NULL)
 }
 
 #' Parse wind shear
@@ -173,11 +180,53 @@ parse_metar_rwy_cond <- function(){
 #' x <- c("WS R25R")
 #' parse_metar_ws(x)
 #'
-parse_metar_ws <- function(){
+parse_metar_ws <- function(x){
+  warning("Not implemented, yet")
+  return(NULL)
+}
+
+## --------------------------------------------------- Validate  ---------------------------------------------------
+
+#' Validate METAR
+#'
+#' @author M. Saenger
+#' @description Validate METAR reports
+#' @param dat Output from `parse_metar`
+#' @param formulas selection of  formulas as quosures `rlang::quos(f1 = tt > tt, f2 = ff > fx)`
+#' @param set.na set NA if validation fails
+#' @export
+#'
+validate_metar <- function(dat, formulas, set.na = TRUE){
+  #dat <- dt.2
+
+  formulas <- rlang::quos(
+    ff_max = ff > 200,
+    fx_max = fx > 300,
+    ff_fx = ff > fx,
+    ff_fx_gust = fx > ff * 5,
+    tt_td = tt < td,
+    qnh_min = qnh < 850,
+    qnh_max = qnh > 1080
+  )
+  n <- names(formulas)
+
+  evaluate <- function(table, a) {
+    rlang::eval_tidy(a, table)
+  }
+  arr <- sapply(formulas, evaluate, table = dat)
+  failed <- which(arr == T, arr.ind = TRUE)
+
+  #cbind(n[failed[,2]],dat[failed[,1]])
+
+  dt.valid <- dat[!failed[,1]]
+  dt.invalid <- dat[failed[,1]]
+
+  structure(dt.valid, invalid = dt.invalid)
 
 }
 
-## --------------------------------------------------- Data Sources  ---------------------------------------------------
+
+## --------------------------------------------------- Read  ---------------------------------------------------
 
 
 #' Get METARs from NOAA cycle files

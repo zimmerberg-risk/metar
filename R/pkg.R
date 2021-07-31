@@ -1,7 +1,10 @@
+#' @import vroom
 #' @import data.table
-#' @import curl
 #' @import stringr
-#' @importFrom readr fwf_positions read_lines read_fwf
+#' @import curl
+#' @importFrom("graphics", "abline", "axis.POSIXct")
+#' @importFrom("stats", "median", "setNames", "time")
+#' @importFrom rlang quo eval_tidy
 #' @importFrom lubridate floor_date ceiling_date
 #'
 NULL

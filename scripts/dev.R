@@ -3,6 +3,7 @@ library(metar)
 library(vroom)
 library(stringr)
 library(metar)
+library(ggplot2)
 #library(stringdist)
 
 # https://tgftp.nws.noaa.gov/data/observations/metar/cycles/10Z.TXT
@@ -10,7 +11,10 @@ library(metar)
 dir.base <- "C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/Data/metar"
 dir.data <- file.path(dir.base, "data")
 p <- file.path(dir.data, "10Z.TXT")
-dt.noaa <- read_metar_noaa(hour = 5, latest.only = T)
+
+dt.noaa <- read_metar_noaa(hour = 13, latest.only = T)
+dt.noaa.2 <- read_metar_noaa(hour = 14, latest.only = T)
+
 grep("SN\\b", dt.noaa$metar, value = T) # CAVOK|NSC|NCD|WXNIL|CLR|SKC|NSW
 
 ## --------------------------------------------------- Speed  ---------------------------------------------------
@@ -26,10 +30,24 @@ vroom::vroom_write(dt.grp, "C:/Users/mat/OneDrive - Zimmerberg Risk Analytics Gm
 parse_metar_cld(x = dt.test$cld)
 
 x1 <- read_metar_mesonet("SBPA", date_start = "2021-07-15")
-x2 <- parse_metar_grp(x1$metar, x1$valid) #dt.noaa$metar
+x2 <- parse_metar(x1$metar, x1$valid) #dt.noaa$metar
 x3 <- parse_metar_pw(x2$pw)
 x2 <- metar.stn[x2, on = "icao"]
 plot_metargram(dat = cbind(x2, x3))
+
+# Cross table
+dt.1 <- rbind(dt.noaa, dt.noaa.2)
+dt.2 <- parse_metar(x = dt.1$metar, t = dt.1$time_valid)
+dt.2[, n := 1:.N, icao]
+dt.2[icao == "SEJD"]
+dt.3 <- dcast(dt.2, icao ~ n, value.var = "fx")
+dt.3[, diff := `2` - `1`]
+
+ggplot(dt.3, aes(`1`, `2`)) +
+  geom_jitter() +
+  geom_text(aes(label = icao), dt.3[order(-abs(diff))][1:10])
+
+
 
 ## --------------------------------------------------- Tests  ---------------------------------------------------
 expression({

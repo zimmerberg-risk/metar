@@ -2,15 +2,11 @@
 #'
 #' @author M. Saenger
 #' @description
-#' Parse a METAR report into groups
-#' Performance: ~ 60s for 1 million records on average machine
+#' Parse a METAR current weather section
 #' @param x METAR reports (character vector)
-#' @param t time (POSIXct vector of same length as `x`)
-#' @param yyyy year
-#' @param mm month
 #' @export
 #' @examples
-#' x <- parse_metar_grp(metar.test$code)$wx
+#' x <- parse_metar(metar.test$code)$wx
 #' parse_metar_wx(x)
 #'
 parse_metar_wx <- function(x){
@@ -177,10 +173,12 @@ parse_metar_wx <- function(x){
 #' @export
 #' @examples
 #' x <- metar.test$code
-#' parse_metar_grp(x)
-#' parse_metar_grp(x = "EGVP 281509Z 27011KT 5000 1000SW +SHRA BKN022CB 15/13 Q1007 BECMG 9999 NSW SCT030 RMK AMB BECMG BLU")
+#' parse_metar(x)
+#' parse_metar(x = "EGVP 281509Z 27011KT 5000 1000SW +SHRA BKN022CB 15/13 Q1007 BECMG 9999 NSW SCT030 RMK AMB BECMG BLU")
 #'
-parse_metar_grp <- function(x, t = NULL, yyyy = year(Sys.Date()), mm = month(Sys.Date())){
+parse_metar <- function(x, t = NULL, yyyy = year(Sys.Date()), mm = month(Sys.Date())){
+
+  if(class(x)[1] != "character") stop("x needs to character vector. Did you accidentialy pass a data frame?")
 
   rmk <- str_split_fixed(x, "(\\s(RMK)\\s)|\\sRMK(?=$)|\\=(?=$)", 2) # |\\=
   becmg <- str_split_fixed(rmk[,1], "((?<=\\s)BECMG)|(\\s(?=NOSIG))", 2)
