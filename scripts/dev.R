@@ -6,16 +6,20 @@ library(metar)
 library(ggplot2)
 #library(stringdist)
 
-# https://tgftp.nws.noaa.gov/data/observations/metar/cycles/10Z.TXT
+# https://tgftp.nws.noaa.gov/data/observations/metar/cycles/11Z.TXT
 
 dir.base <- "C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/Data/metar"
 dir.data <- file.path(dir.base, "data")
 p <- file.path(dir.data, "10Z.TXT")
 
-dt.noaa <- read_metar_noaa(hour = 13, latest.only = T)
-dt.noaa.2 <- read_metar_noaa(hour = 14, latest.only = T)
+dt.noaa <-  read_metar_noaa(12, remote = F, sprintf("%s/%s",dir.data, "11Z.txt"))
+dt.noaa.1 <- read_metar_noaa(12, remote = F, sprintf("%s/%s",dir.data, "12Z.txt"))
+dt.noaa.2 <- read_metar_noaa(12, remote = F, sprintf("%s/%s",dir.data, "13Z.txt"))
 
-grep("SN\\b", dt.noaa$metar, value = T) # CAVOK|NSC|NCD|WXNIL|CLR|SKC|NSW
+dt.meso <- read_metar_mesonet(remote = F, path = sprintf("%s/%s",dir.data, "LSZH.txt"), verbose = T)
+
+
+grep("TSRA\\b", dt.noaa$metar, value = T) # CAVOK|NSC|NCD|WXNIL|CLR|SKC|NSW
 
 ## --------------------------------------------------- Speed  ---------------------------------------------------
 dt.test <- parse_metar_grp(x = metar.test$code)
@@ -35,19 +39,33 @@ x3 <- parse_metar_pw(x2$pw)
 x2 <- metar.stn[x2, on = "icao"]
 plot_metargram(dat = cbind(x2, x3))
 
-# Cross table
-dt.1 <- rbind(dt.noaa, dt.noaa.2)
+## --------------------------------------------------- # Cross table  ---------------------------------------------------
+
+dt.1 <- rbind(dt.noaa.1, dt.noaa.2)
 dt.2 <- parse_metar(x = dt.1$metar, t = dt.1$time_valid)
-dt.2[, n := 1:.N, icao]
-dt.2[icao == "SEJD"]
-dt.3 <- dcast(dt.2, icao ~ n, value.var = "fx")
+dt.2a <- validate_metar(dt.2)
+dt.2a[, n := 1:.N, icao]
+dt.2a[icao == "SEJD"]
+
+dt.3 <- dcast(dt.2a, icao ~ n, value.var = "ff")
 dt.3[, diff := `2` - `1`]
 
 ggplot(dt.3, aes(`1`, `2`)) +
   geom_jitter() +
   geom_text(aes(label = icao), dt.3[order(-abs(diff))][1:10])
 
+## --------------------------------------------------- Time Series  ---------------------------------------------------
 
+dt.meso.parsed <- parse_metar(dt.meso$metar, dt.meso$valid) #dt.noaa$metar
+dt.meso.vali <- validate_metar(dt.meso.parsed)
+dt.meso.pw <- parse_metar_pw(dt.meso.vali$pw)
+dt.meso.cld <- parse_metar_cld(dt.meso.vali$cld)
+dt.plot <- cbind(dt.meso.vali, dt.meso.pw[, -"pw"], dt.meso.cld)
+
+dt.week <- dt.plot[, .(sum = sum(TS)), .(time = lubridate::ceiling_date(time, "1 week"))]
+ggplot(dt.week) + geom_area(aes(time, sum))
+
+ggplot(dt.plot) + geom_path(aes(time, TS))
 
 ## --------------------------------------------------- Tests  ---------------------------------------------------
 expression({

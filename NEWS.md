@@ -1,5 +1,7 @@
 ## metar 0.9.0
 * Complete rebuild
+* File reading based on `vroom` package
+* Performance improvements: Parse functions almost completely based on vectorised functions
 
 
 ## metar 0.4.0

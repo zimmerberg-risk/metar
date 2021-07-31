@@ -192,22 +192,24 @@ parse_metar_ws <- function(x){
 #' @author M. Saenger
 #' @description Validate METAR reports
 #' @param dat Output from `parse_metar`
-#' @param formulas selection of  formulas as quosures `rlang::quos(f1 = tt > tt, f2 = ff > fx)`
-#' @param set.na set NA if validation fails
+#' @param formulas collection of validation formulas as quosures e.g. `rlang::quos(f1 = tt > tt, f2 = ff > fx)`
+#' @param verbose verbose output
 #' @export
 #'
-validate_metar <- function(dat, formulas, set.na = TRUE){
+validate_metar <- function(dat, formulas, verbose = TRUE){
   #dat <- dt.2
 
-  formulas <- rlang::quos(
-    ff_max = ff > 200,
-    fx_max = fx > 300,
-    ff_fx = ff > fx,
-    ff_fx_gust = fx > ff * 5,
-    tt_td = tt < td,
-    qnh_min = qnh < 850,
-    qnh_max = qnh > 1080
-  )
+  if(missing(formulas)){
+    formulas <- rlang::quos(
+      ff_max = ff > 200,
+      fx_max = fx > 300,
+      ff_fx = ff > fx,
+      ff_fx_gust = fx > ff * 5,
+      tt_td = tt < td,
+      qnh_min = qnh < 850,
+      qnh_max = qnh > 1080
+    )
+  }
   n <- names(formulas)
 
   evaluate <- function(table, a) {
@@ -216,10 +218,13 @@ validate_metar <- function(dat, formulas, set.na = TRUE){
   arr <- sapply(formulas, evaluate, table = dat)
   failed <- which(arr == T, arr.ind = TRUE)
 
-  #cbind(n[failed[,2]],dat[failed[,1]])
-
   dt.valid <- dat[!failed[,1]]
   dt.invalid <- dat[failed[,1]]
+
+  if(verbose){
+    cat("Failed validation:\n")
+    print(dt.invalid)
+  }
 
   structure(dt.valid, invalid = dt.invalid)
 
@@ -233,23 +238,29 @@ validate_metar <- function(dat, formulas, set.na = TRUE){
 #'
 #' @author M. Saenger
 #' @param hour specific reporting hour (last 24h)
+#' @param remote Download file from NOAA server
+#' @param path Path to local file
 #' @param latest.only latest report per aiport only
 #' @export
 #' @description
 #' read_metar_noaa(hour = 15, latest.only = T)
 #'
-read_metar_noaa <- function(hour, latest.only = TRUE){
-  p <- sprintf("https://tgftp.nws.noaa.gov/data/observations/metar/cycles/%02dZ.TXT", hour)
+read_metar_noaa <- function(hour, remote = TRUE, path, latest.only = TRUE){
+  url <- sprintf("https://tgftp.nws.noaa.gov/data/observations/metar/cycles/%02dZ.TXT", hour)
 
-  n <- 0 # Iterator
-  download <- FALSE
+  if(remote){
+    n <- 0 # Iterator
+    download <- FALSE
 
-  # Download (try up to 10 times due to unstable connectivity of server)
-  while(n < 10 & download == FALSE){
-    txt <- vroom_lines(p, skip_empty_rows = TRUE)
-    if(length(txt) > 100) download <- TRUE
-    n <<- n + 1
-    Sys.sleep(0.1)
+    # Download (try up to 10 times due to unstable connectivity of server)
+    while(n < 10 & download == FALSE){
+      txt <- vroom::vroom_lines(url, skip_empty_rows = TRUE)
+      if(length(txt) > 100) download <- TRUE
+      n <<- n + 1
+      Sys.sleep(0.1)
+    }
+  } else {
+    txt <- vroom::vroom_lines(path, skip_empty_rows = TRUE)
   }
 
   # METAR
@@ -290,15 +301,16 @@ read_metar_noaa <- function(hour, latest.only = TRUE){
 #' @author M. Saenger
 #' @description Read METAR reports from mesonet.agron.iastate.edu
 #' @param id_icao Lorem Ipsum
+#' @param remote Download file from mesonet.agron.iastate.edu
+#' @param path Path to local file
 #' @param date_start Lorem Ipsum
 #' @param date_end Lorem Ipsum
-#' @param auto Lorem Ipsum
 #' @param verbose Lorem Ipsum
 #' @export
 #' @examples
 #' read_metar_mesonet(id_icao = "KDEN", date_start = Sys.time() - 3600*24*1)
 #'
-read_metar_mesonet <- function(id_icao = "LSZH", date_start = date_end - 3600*24*7, date_end = Sys.time()+3600*24, auto = TRUE, verbose = FALSE){
+read_metar_mesonet <- function(id_icao = "LSZH", remote = TRUE, path, date_start = date_end - 3600*24*7, date_end = Sys.time()+3600*24, verbose = FALSE){
 
   date_start <- as.POSIXct(as.character(date_start), tz = "UTC")
   date_end <- as.POSIXct(as.character(date_end), tz = "UTC")
@@ -317,15 +329,18 @@ read_metar_mesonet <- function(id_icao = "LSZH", date_start = date_end - 3600*24
     format = "onlycomma",
     missing = "empty"
   )
+  if(remote){
+    url.1 <- "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?"
+    url.2 <- paste0(mapply(def, names(def), FUN = function(i, j) paste0(j, "=", i), SIMPLIFY = F), collapse = "&")
 
-  url.1 <- "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py?"
-  url.2 <- paste0(mapply(def, names(def), FUN = function(i, j) paste0(j, "=", i), SIMPLIFY = F), collapse = "&")
+    url <- sprintf("%s%s&tz=UTC&latlon=no&trace=T&direct=no&report_type=1&report_type=2", url.1, url.2)
+    if(verbose) print(url)
 
-  url <- sprintf("%s%s&tz=UTC&latlon=no&trace=T&direct=no&report_type=1&report_type=2", url.1, url.2)
-  if(verbose) print(url)
-
-  # Read
-  dt <- data.table::fread(url, colClasses = c("character", "character", "character"))
+    # Read
+    dt <- data.table::fread(url, colClasses = c("character", "character", "character"))
+  } else {
+    dt <- data.table::fread(path, colClasses = c("character", "character", "character"))
+  }
 
   # Set TZ UTC
   dt$valid <-  as.POSIXct(format(dt$valid), tz = "UTC")

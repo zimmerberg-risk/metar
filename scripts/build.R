@@ -3,7 +3,6 @@ library(roxygen2)
 library(usethis)
 library(available)
 
-
 #' https://usethis.r-lib.org/articles/articles/usethis-setup.html
 #' https://happygitwithr.com/ssh-keys.html
 
