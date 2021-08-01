@@ -1,6 +1,6 @@
 #' Parse METAR Message
 #'
-#' @author M. Saenger
+#' @author M. Saenger, Zimmerberg Risk Analytics GmbH
 #' @description
 #' Parse a METAR current weather section
 #' @param x METAR reports (character vector)
@@ -162,7 +162,7 @@ parse_metar_wx <- function(x){
 
 #' Parse METAR Groups
 #'
-#' @author M. Saenger
+#' @author M. Saenger, Zimmerberg Risk Analytics GmbH
 #' @description
 #' Parse a METAR report into groups
 #' Performance: ~ 60s for 1 million records on average machine

@@ -18,5 +18,5 @@ parse_metar_rwy_cond(x)
 
 }
 \author{
-M. Saenger
+M. Saenger, Zimmerberg Risk Analytics GmbH
 }

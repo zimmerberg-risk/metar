@@ -20,5 +20,5 @@ parse_metar_pw(x = m$pw)
 
 }
 \author{
-M. Saenger
+M. Saenger, Zimmerberg Risk Analytics GmbH
 }

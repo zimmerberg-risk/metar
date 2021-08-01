@@ -21,5 +21,5 @@ plot_metargram(
 Plot METARgram
 }
 \author{
-M. Saenger
+M. Saenger, Zimmerberg Risk Analytics GmbH
 }

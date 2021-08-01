@@ -22,7 +22,7 @@ Install the latest stable version from
 
 ``` r
 # install.packages("devtools") 
-devtools::install_github("m-saenger/metar@0.4.0", upgrade = "never")
+devtools::install_github("m-saenger/metar@0.9.0", upgrade = "never")
 ```
 
 This package depends on **data.table**, **stringr**, **readr** and
@@ -36,24 +36,36 @@ This package depends on **data.table**, **stringr**, **readr** and
 library(metar)
 
 ## read raw data from Mesonet website
-dat <- read_mesonet("LSZH", "2021-03-15", "2021-03-28")
+dat <- read_metar_mesonet("LSZH", date_start = "2021-03-15", date_end = "2021-03-28")
 
 ## parse METAR code
-dat.parsed <- parse_metar(x = dat$metar, date = dat$valid)
+dat.parsed <- parse_metar(x = dat$metar, t = dat$valid)
+#> Warning in eval(jsub, SDenv, parent.frame()): NAs introduced by coercion
 
 # Structure  (subset of columns)
 print(dat.parsed[1:10, .(metar, tt, qnh)])
-#>                                                                  metar tt  qnh
-#>  1:                     25005KT 220V280 9999 FEW008 BKN012 02/01 Q1017  2 1017
-#>  2:                             VRB02KT 9999 FEW008 BKN010 02/01 Q1017  2 1017
-#>  3: 19003KT 120V230 9999 -SHSNRA FEW007 SCT011 BKN016 02/01 Q1017 RESN  2 1017
-#>  4:              VRB03KT 9999 -SHSNRA FEW007 SCT012 BKN017 02/01 Q1016  2 1016
-#>  5:         21005KT 9999 -SHSNRA FEW011 SCT014 BKN019 02/01 Q1016 RESN  2 1016
-#>  6:              22007KT 9999 -SHSNRA FEW009 SCT015 BKN060 02/01 Q1015  2 1015
-#>  7:                    20006KT 9999 FEW010 BKN013 02/01 Q1015 RESHSNRA  2 1015
-#>  8:         22006KT 9999 -SHSNRA FEW009 SCT012 BKN017 03/01 Q1015 RESN  3 1015
-#>  9:                     22007KT 9999 -SHSNRA FEW009 BKN012 02/01 Q1014  2 1014
-#> 10:          22006KT 180V280 6000 -RASN BKN010 BKN015 02/01 Q1014 RESN  2 1014
+#>                                                                                                   metar
+#>  1:                     LSZH 150050Z 25005KT 220V280 9999 FEW008 BKN012 02/01 Q1017 TEMPO SHSNRA BKN009
+#>  2:                             LSZH 150120Z VRB02KT 9999 FEW008 BKN010 02/01 Q1017 TEMPO SHSNRA BKN009
+#>  3: LSZH 150150Z 19003KT 120V230 9999 -SHSNRA FEW007 SCT011 BKN016 02/01 Q1017 RESN TEMPO SHSNRA BKN009
+#>  4:              LSZH 150220Z VRB03KT 9999 -SHSNRA FEW007 SCT012 BKN017 02/01 Q1016 TEMPO SHSNRA BKN009
+#>  5:         LSZH 150250Z 21005KT 9999 -SHSNRA FEW011 SCT014 BKN019 02/01 Q1016 RESN TEMPO SHSNRA BKN009
+#>  6:              LSZH 150320Z 22007KT 9999 -SHSNRA FEW009 SCT015 BKN060 02/01 Q1015 TEMPO SHSNRA BKN009
+#>  7:                    LSZH 150350Z 20006KT 9999 FEW010 BKN013 02/01 Q1015 RESHSNRA TEMPO SHSNRA BKN009
+#>  8:         LSZH 150420Z 22006KT 9999 -SHSNRA FEW009 SCT012 BKN017 03/01 Q1015 RESN TEMPO SHSNRA BKN009
+#>  9:                     LSZH 150450Z 22007KT 9999 -SHSNRA FEW009 BKN012 02/01 Q1014 TEMPO SHSNRA BKN009
+#> 10:          LSZH 150520Z 22006KT 180V280 6000 -RASN BKN010 BKN015 02/01 Q1014 RESN TEMPO SHSNRA BKN009
+#>     tt  qnh
+#>  1:  2 1017
+#>  2:  2 1017
+#>  3:  2 1017
+#>  4:  2 1016
+#>  5:  2 1016
+#>  6:  2 1015
+#>  7:  2 1015
+#>  8:  3 1015
+#>  9:  2 1014
+#> 10:  2 1014
 ```
 
 ### Variable names
@@ -93,22 +105,22 @@ ggplot(dat.parsed, aes(time, tt)) +
 
 ``` r
 # Process cloud groups (1-4)
-dat.cld <- metar_clouds(dat.parsed$cl)    
+dat.cld <- parse_metar_cld(dat.parsed$cld)    
 dat.cld$time <- dat.parsed$time
 
 # Structure (subset of columns)
-print(dat.cld[1:10, .(time, cld_levels,  cld_1 , cld_amt_1, cld_hgt_1, cld_type_1 )])
-#>                    time cld_levels  cld_1 cld_amt_1 cld_hgt_1 cld_type_1
-#>  1: 2021-03-15 00:50:00          2 FEW008       FEW       800       <NA>
-#>  2: 2021-03-15 01:20:00          2 FEW008       FEW       800       <NA>
-#>  3: 2021-03-15 01:50:00          3 FEW007       FEW       700       <NA>
-#>  4: 2021-03-15 02:20:00          3 FEW007       FEW       700       <NA>
-#>  5: 2021-03-15 02:50:00          3 FEW011       FEW      1100       <NA>
-#>  6: 2021-03-15 03:20:00          3 FEW009       FEW       900       <NA>
-#>  7: 2021-03-15 03:50:00          2 FEW010       FEW      1000       <NA>
-#>  8: 2021-03-15 04:20:00          3 FEW009       FEW       900       <NA>
-#>  9: 2021-03-15 04:50:00          2 FEW009       FEW       900       <NA>
-#> 10: 2021-03-15 05:20:00          2 BKN010       BKN      1000       <NA>
+print(dat.cld[1:10, .(time, cld_lay,  cld_amt_1, cld_hgt_1, cld_type_1 )])
+#>                    time cld_lay cld_amt_1 cld_hgt_1 cld_type_1
+#>  1: 2021-03-15 00:50:00       2       FEW         8       <NA>
+#>  2: 2021-03-15 01:20:00       2       FEW         8       <NA>
+#>  3: 2021-03-15 01:50:00       3       FEW         7       <NA>
+#>  4: 2021-03-15 02:20:00       3       FEW         7       <NA>
+#>  5: 2021-03-15 02:50:00       3       FEW        11       <NA>
+#>  6: 2021-03-15 03:20:00       3       FEW         9       <NA>
+#>  7: 2021-03-15 03:50:00       2       FEW        10       <NA>
+#>  8: 2021-03-15 04:20:00       3       FEW         9       <NA>
+#>  9: 2021-03-15 04:50:00       2       FEW         9       <NA>
+#> 10: 2021-03-15 05:20:00       2       BKN        10       <NA>
 
 ggplot(dat.cld, aes(time, cld_hgt_1)) +
   geom_path() +
@@ -122,21 +134,21 @@ ggplot(dat.cld, aes(time, cld_hgt_1)) +
 
 ``` r
 # Parse present weather group
-dat.pw <- dat.parsed[, metar_pw(pw)]
+dat.pw <- dat.parsed[, parse_metar_pw(pw)]
 
 # Structure (subset of columns)
-print(dat.pw[1:10, .(pw_grp_1, pw_grp_2, re, PP_SOLID, PP_LIQUID, sigwx)])
-#>     pw_grp_1 pw_grp_2       re PP_SOLID PP_LIQUID    sigwx
-#>  1:     <NA>     <NA>     <NA>     <NA>      <NA>    NOSIG
-#>  2:     <NA>     <NA>     <NA>     <NA>      <NA>    NOSIG
-#>  3:  -SHSNRA     <NA>     <NA>       SN        RA PP_SOLID
-#>  4:  -SHSNRA     <NA>     <NA>       SN        RA PP_SOLID
-#>  5:  -SHSNRA     <NA>     <NA>       SN        RA PP_SOLID
-#>  6:  -SHSNRA     <NA>     <NA>       SN        RA PP_SOLID
-#>  7:     <NA>     <NA> RESHSNRA     <NA>      <NA>    re_PP
-#>  8:  -SHSNRA     <NA>     <NA>       SN        RA PP_SOLID
-#>  9:  -SHSNRA     <NA>     <NA>       SN        RA PP_SOLID
-#> 10:    -RASN     <NA>     <NA>       SN        RA PP_SOLID
+print(dat.pw[1:10, .(pw_grp_1, pw_grp_2, PP_SOLID, PP_LIQUID, sigwx)])
+#>     pw_grp_1 pw_grp_2 PP_SOLID PP_LIQUID    sigwx
+#>  1:     <NA>     <NA>        0         0    NOSIG
+#>  2:     <NA>     <NA>        0         0    NOSIG
+#>  3:  -SHSNRA     <NA>        1         1 PP_SOLID
+#>  4:  -SHSNRA     <NA>        1         1 PP_SOLID
+#>  5:  -SHSNRA     <NA>        1         1 PP_SOLID
+#>  6:  -SHSNRA     <NA>        1         1 PP_SOLID
+#>  7:     <NA>     <NA>        0         0    NOSIG
+#>  8:  -SHSNRA     <NA>        1         1 PP_SOLID
+#>  9:  -SHSNRA     <NA>        1         1 PP_SOLID
+#> 10:    -RASN     <NA>        1         1 PP_SOLID
 
 # Bind data
 dat.plot <- cbind(dat.parsed, dat.pw)

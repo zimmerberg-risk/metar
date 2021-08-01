@@ -5,7 +5,7 @@
 \alias{metar.stn}
 \title{Station meta data}
 \format{
-An object of class \code{data.table} (inherits from \code{data.frame}) with 22296 rows and 15 columns.
+An object of class \code{data.table} (inherits from \code{data.frame}) with 22296 rows and 13 columns.
 }
 \usage{
 metar.stn

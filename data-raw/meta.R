@@ -51,10 +51,10 @@ dt.stn.2 <- fread("data-raw/master-location-identifier-database-202103_standard.
                 na.strings = c("", "-9999"))
 dt.stn.2 <- dt.stn.2[!is.na(icao), .(icao, ctry = country2, ctry3 = country3, ctry_name = country, region, ap_name_long = place_name, lon, lat, elev )]
 dt.stn.2[, ap_name := trimws(tstrsplit(ap_name_long, "\\|")[[1]])]
-dt.stn.2 <- metar.stn[!is.na(icao) & !is.na(lat)]
+dt.stn.2 <- dt.stn.2[!is.na(icao) & !is.na(lat)]
 
 # Combine
-metar.stn <- rbind(dt.stn.1, dt.stn.2, fill = T)
+metar.stn <- rbind(dt.stn.2, dt.stn.1, fill = T)
 
 # Duplicated ICAO
 metar.stn <- metar.stn[!duplicated(metar.stn$icao)]
@@ -71,9 +71,16 @@ metar.stn <- merge(metar.stn, dt.unique, by = "icao", all.x = TRUE)
 metar.stn[, active := fifelse(is.na(active), FALSE, TRUE)]
 
 # Test
-metar.stn[ctry == "CH" & active == TRUE]
-# stn.1[icao == "EPRA"]
-# metar.stn[icao == "EPRA"]
+expression({
+  id.icao = "LOWW"
+  metar.stn[ctry == "AT" & active == TRUE]
+  # dt.stn.1[icao == "EPRA"]
+  dt.stn.1[icao == id.icao]
+  dt.stn.2[icao == id.icao]
+  metar.stn[icao == id.icao]
+  metar.stn[, .N, active]
+  metar.stn[active == T, .N, ctry]
+})
 
 # Save
 usethis:::use_data(metar.stn, overwrite = TRUE, internal = FALSE)

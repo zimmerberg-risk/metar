@@ -13,5 +13,5 @@ fill_time_gaps(x)
 Fill time gaps
 }
 \author{
-M. Saenger
+M. Saenger, Zimmerberg Risk Analytics GmbH
 }

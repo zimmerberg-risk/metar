@@ -4,6 +4,7 @@ library(vroom)
 library(stringr)
 library(metar)
 library(ggplot2)
+
 #library(stringdist)
 
 # https://tgftp.nws.noaa.gov/data/observations/metar/cycles/11Z.TXT
@@ -17,7 +18,7 @@ dt.noaa.1 <- read_metar_noaa(12, remote = F, sprintf("%s/%s",dir.data, "12Z.txt"
 dt.noaa.2 <- read_metar_noaa(12, remote = F, sprintf("%s/%s",dir.data, "13Z.txt"))
 
 dt.meso <- read_metar_mesonet(remote = F, path = sprintf("%s/%s",dir.data, "LSZH.txt"), verbose = T)
-
+dt.meso.LOWW <- read_metar_mesonet(remote = F, path = sprintf("%s/%s",dir.data, "LOWW.txt"), verbose = T)
 
 grep("TSRA\\b", dt.noaa$metar, value = T) # CAVOK|NSC|NCD|WXNIL|CLR|SKC|NSW
 
@@ -45,7 +46,7 @@ dt.1 <- rbind(dt.noaa.1, dt.noaa.2)
 dt.2 <- parse_metar(x = dt.1$metar, t = dt.1$time_valid)
 dt.2a <- validate_metar(dt.2)
 dt.2a[, n := 1:.N, icao]
-dt.2a[icao == "SEJD"]
+dt.2a[icao == "LSZH"]
 
 dt.3 <- dcast(dt.2a, icao ~ n, value.var = "ff")
 dt.3[, diff := `2` - `1`]
@@ -54,60 +55,44 @@ ggplot(dt.3, aes(`1`, `2`)) +
   geom_jitter() +
   geom_text(aes(label = icao), dt.3[order(-abs(diff))][1:10])
 
+## --------------------------------------------------- Time Series LSZH/LOWW  ---------------------------------------------------
+dt.1 <- rbind(dt.meso, dt.meso.LOWW)
+dt.2 <- parse_metar(dt.1$metar, dt.1$valid) #dt.noaa$metar
+dt.3 <- validate_metar(dt.2)
+
+setkey(dt.3, icao, time)
+dt.4 <- dt.3[!duplicated(dt.3, by = key(dt.3))]
+
+dt.time <- data.table(time = seq(as.POSIXct("2013-01-01 00:20:00"), as.POSIXct("2021-07-31 23:50:00"), "30 min"))
+dt.4 <- merge(dt.3, dt.time, by = "time", all = T)
+dt.4[, .N, .(icao, time)][order(N)]
+
+dt.5 <- dcast(dt.4, time ~ icao, value.var = "tt")
+dt.5[, diff := LOWW - LSZH]
+dt.5[, roll := RcppRoll::roll_mean(diff, n = 24*2*7, na.rm = T, fill = NA)]
+
+ggplot(dt.5, aes(time, diff)) +
+  #geom_path(aes(time, diff), colour = "black", size = .25) +
+  geom_path(aes(time, roll), colour = "red")
+
+
 ## --------------------------------------------------- Time Series  ---------------------------------------------------
 
 dt.meso.parsed <- parse_metar(dt.meso$metar, dt.meso$valid) #dt.noaa$metar
 dt.meso.vali <- validate_metar(dt.meso.parsed)
 dt.meso.pw <- parse_metar_pw(dt.meso.vali$pw)
 dt.meso.cld <- parse_metar_cld(dt.meso.vali$cld)
-dt.plot <- cbind(dt.meso.vali, dt.meso.pw[, -"pw"], dt.meso.cld)
+dt.plot <- cbind(dt.meso.vali, dt.meso.pw[, -"pw"], dt.meso.cld)[month(time) %in% 1:7]
 
-dt.week <- dt.plot[, .(sum = sum(TS)), .(time = lubridate::ceiling_date(time, "1 week"))]
+dt.count <- dt.plot[sigwx != "NOSIG", .N, .(icao, sigwx, time = lubridate::floor_date(time, "1 year"))]
+ggplot(dt.count) + facet_wrap(~sigwx, scales = "free_y") + geom_bar(aes(time, N, fill = sigwx), stat = "identity")
+
+dt.week <- dt.plot[, .(sum = sum(PP)), .(time = lubridate::ceiling_date(time, "1 week"))]
 ggplot(dt.week) + geom_area(aes(time, sum))
 
 ggplot(dt.plot) + geom_path(aes(time, TS))
 
 ## --------------------------------------------------- Tests  ---------------------------------------------------
-expression({
-  test.wx <- c("EGVP 281509Z VRB03G17KT 050V140 0200NDV 4000SE R09R/0900N R27L/0750N R01/019591 R02C/019591 +TSRA SNGSRA VCFG SCT009 BKN029 OVC045CB 25/18 Q1017 WS R08",
-          "EGVP 281509Z 29006KT CAVOK 10SM 28/18 A3008")
-  test.grp <- "EGVP 281509Z 27011KT 5000 1000SW +SHRA BKN022CB 15/13 Q1007 TEMPO +TS BECMG 9999 NSW SCT030 RMK AMB"
 
-  stringr::str_match("111 AAAA AAAA 111", "((?:A{4}(?:\\s)?){1,4}(?:\\s)?)")
-  stringr::str_match(rep("AAAA AAAA XXXX XXXX XXXX 111", 2), "((?:A{4}(?:\\s)){1,4})?((?:X{4}(?:\\s)){1,4})?((?:Y{4}(?:\\s)){1,4})?")
-  stringr::str_match("SCT009 SCT/// BKN029 OVC045CB", "((?:(?:FEW|SCT|BKN|OVC|[0-9\\/]{3})[0-9\\/]{3}[A-Z]{0,2}(?:\\s)?){1,4}(?:\\s)?)")
-  str_match(c("WS R08", "WS ALL RWY"), "((?<=WS\\s)(?:R[A-Z0-9]{2,3}|ALL RWY))")
-
-  re <- str_match(metar.test$code, "(?<=RE).+?(?=(?:\\s(?:TEMP|BECMG|RMK))|$)")
-  tempo <- str_match(metar.test$code, "(?<=TEMPO\\s).+?(?=(?:\\s(?:BECMG|RMK))|$)")
-  becmg <- str_match(metar.test$code, "(?<=BECMG\\s).+?(?=(?:\\s(?:RMK))|$)")
-  rmk <- str_match(metar.test$code, "(?<=RMK\\s).+?$")
-
-
-  str_detect(metar.test$code, fixed("(RMK|TEMPO)"))
-  str_locate_all(metar.test$code, fixed(c("RMK", "TEMPO")))
-
-
-  test.grp <- c("EGVP 281509Z 27011KT 5000 BKN022CB 15/13 Q1007", "EGVP 281509Z 27011KT 5000 BKN022CB 15/13 Q1007 TEMPO +TS RMK AMB", "EGVP 281509Z 27011KT 5000 BKN022CB 15/13 Q1007 TEMPO +TS BECMG 9999 NSW SCT030 RMK AMB")
-
-  system.time({
-    str <-  dt.noaa$metar #  metar.test$code
-    rmk <- str_split_fixed(str, "(?<=\\s)RMK(?=\\s)", 2)
-    becmg <- str_split_fixed(rmk[,1], "(?<=\\s)BECMG", 2)
-    tempo <- str_split_fixed(becmg[,1], "(?<=\\s)TEMPO", 2)
-    re <- str_split_fixed(tempo[,1], "\\s(?<=\\s)RE", 2)
-
-    wx <- str_split_fixed(re[,1], "\\s(?<=[0-9]{6}Z\\s)", 2)
-    auto <- str_split_fixed(wx[,2], "(?<=AUTO)\\s|(^(?!AUTO))", 2)
-    cor <- str_split_fixed(auto[,2], "(?<=COR)\\s|(^(?!COR))", 2)
-
-    time <- str_split_fixed(wx[,1], "(?<=[0-9A-Z]{4})\\s", 2)
-
-    res <- as.data.table(cbind(time[,1], time[,2], cor[,1], auto[,1], wx[,2], re[,2], tempo[,2], becmg[,2],  rmk[,2]))
-    setnames(res, c("id_icao", "time_valid", "cor", "auto", "wx", "re", "tempo", "becmg", "rmk")) #
-  })
-  res
-
-})
 
 

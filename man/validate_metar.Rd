@@ -4,18 +4,18 @@
 \alias{validate_metar}
 \title{Validate METAR}
 \usage{
-validate_metar(dat, formulas, set.na = TRUE)
+validate_metar(dat, formulas, verbose = TRUE)
 }
 \arguments{
 \item{dat}{Output from \code{parse_metar}}
 
-\item{formulas}{selection of  formulas as quosures \code{rlang::quos(f1 = tt > tt, f2 = ff > fx)}}
+\item{formulas}{collection of validation formulas as quosures e.g. \code{rlang::quos(f1 = tt > tt, f2 = ff > fx)}}
 
-\item{set.na}{set NA if validation fails}
+\item{verbose}{verbose output}
 }
 \description{
 Validate METAR reports
 }
 \author{
-M. Saenger
+M. Saenger, Zimmerberg Risk Analytics GmbH
 }

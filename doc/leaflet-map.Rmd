@@ -23,7 +23,7 @@ library(leaflet)
 
 dat <- read_metar_noaa(hour = 15, latest.only = TRUE)
 dat.parsed <- parse_metar(x = dat$metar)
-dat.valid <- validate_metar(dat.parsed, set.na = TRUE)
+dat.valid <- validate_metar(dat.parsed)
 dat.map <- merge(dat.valid, metar.stn, by = "icao")
 
 

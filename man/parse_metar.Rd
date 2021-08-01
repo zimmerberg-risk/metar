@@ -26,5 +26,5 @@ parse_metar(x = "EGVP 281509Z 27011KT 5000 1000SW +SHRA BKN022CB 15/13 Q1007 BEC
 
 }
 \author{
-M. Saenger
+M. Saenger, Zimmerberg Risk Analytics GmbH
 }

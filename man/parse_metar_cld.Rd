@@ -20,5 +20,5 @@ parse_metar_cld(x = m$cld)
 
 }
 \author{
-M. Saenger
+M. Saenger, Zimmerberg Risk Analytics GmbH
 }

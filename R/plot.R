@@ -1,5 +1,5 @@
 #' Set Alpha
-#'
+#' @author M. Saenger, Zimmerberg Risk Analytics GmbH
 #' @param x Colour vector
 #' @param alpha Transparency
 #' @export
@@ -45,7 +45,7 @@ multicolor.title <- function(main, col.main, collapse='', ...) {
 
 #' Fill time gaps
 #'
-#' @author M. Saenger
+#' @author M. Saenger, Zimmerberg Risk Analytics GmbH
 #' @param x time vector
 #' @export
 #'
@@ -60,7 +60,7 @@ fill_time_gaps <- function(x){
 
 #' Determine value range
 #'
-#' @author M. Saenger
+#' @author M. Saenger, Zimmerberg Risk Analytics GmbH
 #' @param x vector
 #' @param para parameter
 #' @export
@@ -76,7 +76,7 @@ get_range <- function(x, para){
 
 #' Plot METARgram
 #'
-#' @author M. Saenger
+#' @author M. Saenger, Zimmerberg Risk Analytics GmbH
 #' @param dat data set
 #' @param cex global text size
 #' @param attribution data source
@@ -93,6 +93,9 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
   dt.time <- data.table(time = fill_time_gaps(x = dat$time))
   dt.time$icao <- dat$icao[1]
   dat <- dat[dt.time, on = c("time", "icao")]
+
+  # Map airport info
+  dat <- metar.stn[dat, on = "icao"]
 
   # Average time interval
   dt <- as.numeric(stats::median(diff(dat$time), na.rm = TRUE), "secs")
