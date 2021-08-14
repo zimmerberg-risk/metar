@@ -10,15 +10,15 @@ library(maps)
 
 # ---------------------------------------- Latest -----------------------------------------------
 
-x <- metar_latest(id_icao = "", report.hour = 12)
-dat.parsed <- parse_metar(x = x)
-dt <- metar_validate(dat.parsed, set.na = TRUE)
+x <- read_metar_noaa(hour = 5)
+dat.parsed <- parse_metar(x = x$metar, t =x$time_valid)
+dt <- validate_metar(dat.parsed)
 
-dt.pw <- metar_pw(pw = dt$pw, PH = T)
-dt.cld <- metar_clouds(cld = dt$cld)
-dt.rvr <- metar_rvr(rvr = dt$rvr)
+dt.pw <- parse_metar_pw(dt$pw)
+dt.cld <- parse_metar_cld(dt$cld)
+dt.rvr <- parse_metar_rvr(dt$rvr)
 dt.comb <- cbind(dt, dt.pw, dt.cld, dt.rvr)
-
+dt.comb <- metar.stn[dt.comb, on = "icao"]
 # unique(dt$rwc)
 # unique(dt$rvr)
 
@@ -31,7 +31,7 @@ dt.comb <- cbind(dt, dt.pw, dt.cld, dt.rvr)
 
 # ---------------------------------------- Leaflet Numerical -----------------------------------------------
 library(leaflet)
-id.para <- "fx"
+id.para <- "tt"
 pal <- colorNumeric("Spectral", reverse = TRUE, domain = NULL, na.color = "#eeefff")
 leaflet(data = dt.comb) %>%
   addTiles() %>%
@@ -44,7 +44,7 @@ leaflet(data = dt.comb) %>%
 
 id.para <- "sigwx"
 levels <- metar.class[id_para == "sigwx"][1:10]$id_class
-dt.map <- dt.comb[sigwx %in% levels]
+dt.map <- dt.comb[sigwx != "NIL"]
 dt.map[, sigwx := factor(sigwx, levels)]
 pal <- colorFactor(palette = metar.class[id_para == "sigwx"][1:10]$col, levels = levels, na.color = "#eeefff")
 
@@ -99,7 +99,7 @@ stn.list <- list(
   select = c("PTRO", "PTYA", "BIKF", "YGEL", "LSZH", "LSZA", "FTTJ", "GABS", "GCXO", "NZSP", "LOWI",
          "UUDD", "GCXO", "WSSS", "BGTL", "SBMN", "OMDB", "KBOS"),
   #world = unique(unname(icao.cities)),
-  ch = stn <- metar_stn(fi.ctry = "Switzerland")$icao
+  ch = stn <- get_metar_stn(fi.ctry = "Switzerland")$icao
 )
 
 id.area <- "ch"
@@ -108,26 +108,29 @@ id.folder <- sprintf("C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/Dat
 
 void <- lapply(stn[], function(id.icao){
 
-  id.icao <- "SBCH"
+  id.icao <- "URKK" # URSS URKK LTFH LICZ URKA
 
   cat(id.icao, " ", match(id.icao, stn), "\n")
 
-  date.end <- as.Date("2021-07-31") #Sys.Date()"2018-05-29"
-  date.start <- date.end - 60 #Sys.Date() - 14  "2021-04-01"
+  date.end <- Sys.Date()
+  date.start <- date.end - 7 #Sys.Date() - 14  "2021-04-01"
 
-  dat.metar <- read_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end)
+  dat.metar <- read_metar_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end)
   if(nrow(dat.metar) == 0) return(NULL)
-  dat.parsed <- parse_metar(x = dat.metar$metar, date = dat.metar$valid)
-  dat.parsed <- metar_validate(dat.parsed, set.na = TRUE)
-  dat.plot <- cbind(dat.parsed, dat.parsed[, metar_pw(pw)])
+  dat.parsed <- parse_metar(x = dat.metar$metar, t = dat.metar$valid)
+  dat.parsed <- validate_metar(dat.parsed)
+  dat.plot <- cbind(dat.parsed, dat.parsed[, parse_metar_pw(pw)])
+  dat.plot <- metar.stn[dat.plot, on = "icao"]
 
-  file.name <- file.path(id.folder, sprintf("%s_%s_%s.png", id.icao, str_remove(dat.parsed$ap_name[1], "\\/|\\?"), substr(date.end, 1, 10)))
+  file.name <- file.path(id.folder, sprintf("%s_%s_%s.png", id.icao, str_remove(dat.plot$ap_name[1], "\\/|\\?"), substr(date.end, 1, 10)))
 
   png(file.name, width = 1600, height = 900, units = "px", res = 96)
   plot_metargram(dat = dat.plot, cex = 1.3)
   dev.off()
 
 })
+
+
 dat.parsed[, .SD[which.max(tt)]]
 # Map
 

@@ -49,6 +49,6 @@ devtools::install_github("m-saenger/metar", upgrade = "never", build_manual = T,
 
 # git tag 0.9.0
 # git push --tags
-# git tags
+# git tag
 
 

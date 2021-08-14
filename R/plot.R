@@ -1,3 +1,6 @@
+
+## --------------------------------------------------- Auxilliary  ---------------------------------------------------
+
 #' Set Alpha
 #' @author M. Saenger, Zimmerberg Risk Analytics GmbH
 #' @param x Colour vector
@@ -73,6 +76,8 @@ get_range <- function(x, para){
   range(x, na.rm = TRUE)
 }
 
+## --------------------------------------------------- Plot  ---------------------------------------------------
+
 
 #' Plot METARgram
 #'
@@ -117,7 +122,7 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
 
   # Plot
   def.par <- graphics::par(no.readonly = TRUE) # save default, for resetting...
-  graphics::layout(mat, heights = c(0.05, rep((1 - 0.05 - 0.02)/4, 3),(1 - 0.05 - 0.02)/4 + 0.02))
+  graphics::layout(mat, heights = c(0.06, rep((1 - 0.06 - 0.02)/4, 3),(1 - 0.06 - 0.02)/4 + 0.02))
 
   # Title
   graphics::par(mai = c(0, 0.5, 0.3, 0.1)*cex)

@@ -82,8 +82,9 @@ parse_metar_wx <- function(x){
   # m <- as.data.table(str_match(string = x, regex)[,-1])
   # setnames(m, do.call(c, sapply(regex.list, "[[", "id_para")) )
 
+  rwy_cond <- str_split_fixed(x, "\\s(?=(R[0-9]{2}[CLR]?\\/)(([0-9\\/]{1}[1259\\/]{1}[0-9\\/]{2}[0-9\\/]{1}[0-9\\/]{1})|SNOCLO|CLRD[0-9\\/]{2})\\b)", 2)
+  # R88/CLRD// R07C/CLRD95 R07C/SNOCLO  R23L/CLRD70
 
-  rwy_cond <- str_split_fixed(x, "\\s(?=(R[0-9]{2}[CLR]?\\/)(([0-9\\/]{1}[1259\\/]{1}[0-9\\/]{2}[0-9\\/]{1}[0-9\\/]{1})|SNOCLO|CLRD\\/\\/)\\b)", 2)  # R88/CLRD// R07C/CLRD95 R07C/SNOCLO
   ws <- str_split_fixed(rwy_cond[,1], "\\sWS\\s", 2)
   re <- str_split_fixed(ws[,1], "\\s(?<=\\s)RE", 2)
   qnh <- str_split_fixed(re[,1], "\\s(?=[AQ][0-9\\/]{4})", 2)
@@ -159,6 +160,7 @@ parse_metar_wx <- function(x){
   set(m, NULL, c("ff_unit", "vis_ones", "vis_frac", "vis_unit", "denom", "num", "tt_sign", "td_sign", "qnh_unit"), NULL)
   m[]
 }
+
 
 #' Parse METAR Groups
 #'
