@@ -4,6 +4,7 @@
 ^scripts$
 ^LICENSE.md$
 ^doc$
+^docs$
 ^Meta$
 ^data-raw$
 ^_config.yml$

@@ -10,7 +10,7 @@
 #' @param latest.only latest report per aiport only
 #' @export
 #' @description
-#' read_metar_noaa(hour = 15, latest.only = T)
+#' read_metar_noaa(hour = 15, latest.only = TRUE)
 #'
 read_metar_noaa <- function(hour, remote = TRUE, path, latest.only = TRUE){
   url <- sprintf("https://tgftp.nws.noaa.gov/data/observations/metar/cycles/%02dZ.TXT", hour)
@@ -66,7 +66,6 @@ read_metar_noaa <- function(hour, remote = TRUE, path, latest.only = TRUE){
 #' Read METAR reports from mesonet.agron.iastate.edu
 #'
 #' @author M. Saenger
-#' @description Read METAR reports from mesonet.agron.iastate.edu
 #' @param id_icao Lorem Ipsum
 #' @param remote Download file from mesonet.agron.iastate.edu
 #' @param path Path to local file
@@ -74,8 +73,8 @@ read_metar_noaa <- function(hour, remote = TRUE, path, latest.only = TRUE){
 #' @param date_end Lorem Ipsum
 #' @param verbose Lorem Ipsum
 #' @export
-#' @examples
-#' read_metar_mesonet(id_icao = "KDEN", date_start = Sys.time() - 3600*24*1, verbose = T)
+#' @description Read METAR reports from mesonet.agron.iastate.edu
+#' read_metar_mesonet(id_icao = "KDEN", date_start = Sys.time() - 3600*24*1, verbose = TRUE)
 #'
 read_metar_mesonet <- function(id_icao = "LSZH", remote = TRUE, path, date_start = date_end - 3600*24*7, date_end = Sys.time()+3600*24, verbose = FALSE){
 

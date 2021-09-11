@@ -10,7 +10,7 @@ library(maps)
 
 # ---------------------------------------- Latest -----------------------------------------------
 
-x <- read_metar_noaa(hour = 5)
+x <- read_metar_noaa(hour = 7)
 dat.parsed <- parse_metar(x = x$metar, t =x$time_valid)
 dt <- validate_metar(dat.parsed)
 
@@ -31,7 +31,7 @@ dt.comb <- metar.stn[dt.comb, on = "icao"]
 
 # ---------------------------------------- Leaflet Numerical -----------------------------------------------
 library(leaflet)
-id.para <- "tt"
+id.para <- "ff"
 pal <- colorNumeric("Spectral", reverse = TRUE, domain = NULL, na.color = "#eeefff")
 leaflet(data = dt.comb) %>%
   addTiles() %>%
@@ -108,12 +108,12 @@ id.folder <- sprintf("C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/Dat
 
 void <- lapply(stn[], function(id.icao){
 
-  id.icao <- "URKK" # URSS URKK LTFH LICZ URKA
+  id.icao <- "LSZH" #CYYT RCFN  RCKH   URSS URKK LTFH LICZ URKA
 
   cat(id.icao, " ", match(id.icao, stn), "\n")
 
   date.end <- Sys.Date()
-  date.start <- date.end - 7 #Sys.Date() - 14  "2021-04-01"
+  date.start <- date.end - 100 #Sys.Date() - 14  "2021-04-01"
 
   dat.metar <- read_metar_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end)
   if(nrow(dat.metar) == 0) return(NULL)

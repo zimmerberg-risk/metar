@@ -1,54 +1,42 @@
-library(devtools)
-library(roxygen2)
-library(usethis)
-library(available)
+## ------------------------------------- Def --------------------------------------
 
-#' https://usethis.r-lib.org/articles/articles/usethis-setup.html
-#' https://happygitwithr.com/ssh-keys.html
+pkg.name <- "metar"
+github <- "m-saaenger"
+version <- "0.9.0"
 
-package.name <- "metar"
-# available::available(package.name)
-#
-# create_package(sprintf("C:/Users/mat/OneDrive - Zimmerberg Risk Analytics GmbH/R/%s", package.name))
-#
-# usethis::use_git_config(user.name = "m-saenger", user.email = "matthias.saenger@myweather.ch")
-# usethis::git_sitrep()
-# usethis::git_vaccinate()
-# edit_r_environ()
-#
-# usethis::use_readme_rmd()
-#
-# use_r(package.name)
-# use_test(package.name)
-# usethis::use_ccby_license()
-# usethis::use_namespace(roxygen = TRUE)
-# usethis::use_news_md()
-#
-# # before checks/install
-# usethis::use_data_table()
+## ------------------------------------- Build --------------------------------------
 
+devtools::load_all()
 
-devtools::load_all(reset = TRUE)
+# Register data sets
 usethis:::use_data(
   metar.src,
   internal=FALSE, overwrite=TRUE
 )
+
+# Document and check
 devtools::document()
 devtools::check()
 devtools::build_readme()
-devtools::build_vignettes(clean = T)
+devtools::build_vignettes()
 
-detach("package:metar", unload = TRUE)
-remove.packages("metar")
+# Build and install local
 p <- devtools::build()
-devtools::install_local(p, force = TRUE, upgrade = "never")
-library(metar)
+detach(sprintf("package:%s", pkg.name), unload = TRUE, character.only = TRUE)
+devtools::install_local(p, force = TRUE, upgrade = "never", build_manual = T, build_vignettes = T)
+devtools::build_site()
 
-# https://github.com/m-saenger/metar
-devtools::install_github("m-saenger/metar", upgrade = "never", build_manual = T, build_vignettes = T)
+## ------------------------------------- Install from Github --------------------------------------
+expression({
 
-# git tag 0.9.0
-# git push --tags
-# git tag
+  # Install tagged version
+  devtools::install_github(sprintf("%s/%s@%s", github, pkg.name, version))
+  # Install latest
+  sprintf("devtools::install_github(\"%s/%s\")", github, pkg.name)
+  devtools::install_github(sprintf("%s/%s", github, pkg.name))
+
+
+})
+
 
 

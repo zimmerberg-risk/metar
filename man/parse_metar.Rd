@@ -22,7 +22,7 @@ Performance: ~ 60s for 1 million records on average machine
 \examples{
 x <- metar.test$code
 parse_metar(x)
-parse_metar(x = "EGVP 281509Z 27011KT 5000 1000SW +SHRA BKN022CB 15/13 Q1007 BECMG 9999 NSW SCT030 RMK AMB BECMG BLU")
+parse_metar(x = "EGVP 281509Z 27011KT 5000 1000SW +SHRA BKN022CB 15/13 Q1007 BECMG 9999 NSW")
 
 }
 \author{

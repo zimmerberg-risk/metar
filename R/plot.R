@@ -108,7 +108,7 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
   time.int.tick <- as.numeric(median(diff(time.ticks)), "days")
 
   # Determine axis formats as axis.POSIXct does not work as expected
-  time.int <- c(0, 0.5, 1, 2, 5, 10, 50, 100, 1000, 10000) # in hours
+  time.int <- c(0, 0.5, 1, 2, 5, 16, 50, 100, 1000, 10000) # in hours
   time.formats <- c("%H:%M", "%H", "%d. %H", "%d", "%d.%m", "%m", "%m.%Y", "%Y", "%Y")
   time.format <- time.formats[findInterval(time.int.tick, time.int)]
   time.str <- paste(format(range(dt.time$time), "%Y-%m-%d %H:%M"), collapse = " - ")

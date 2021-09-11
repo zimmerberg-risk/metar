@@ -28,10 +28,7 @@ read_metar_mesonet(
 }
 \description{
 Read METAR reports from mesonet.agron.iastate.edu
-}
-\examples{
-read_metar_mesonet(id_icao = "KDEN", date_start = Sys.time() - 3600*24*1, verbose = T)
-
+read_metar_mesonet(id_icao = "KDEN", date_start = Sys.time() - 3600\emph{24}1, verbose = TRUE)
 }
 \author{
 M. Saenger

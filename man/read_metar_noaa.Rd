@@ -16,7 +16,7 @@ read_metar_noaa(hour, remote = TRUE, path, latest.only = TRUE)
 \item{latest.only}{latest report per aiport only}
 }
 \description{
-read_metar_noaa(hour = 15, latest.only = T)
+read_metar_noaa(hour = 15, latest.only = TRUE)
 }
 \author{
 M. Saenger

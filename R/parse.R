@@ -149,13 +149,6 @@ parse_metar_wx <- function(x){
   m[!is.na(vis_unit), vis := round(vis * unname(vis.unit[match(vis_unit, names(vis.unit))]), 0)]
   m[qnh_unit == "A", qnh := round(qnh * 0.3386387, 1)]
 
-  # m[!is.na(tt_sign)]
-  # m[grepl("\\/", vis)]
-  #
-  # grep("17\\/", x, value = T)
-  # unique(m$ff)
-  # unique(m$vis)
-
   # Remove columns
   set(m, NULL, c("ff_unit", "vis_ones", "vis_frac", "vis_unit", "denom", "num", "tt_sign", "td_sign", "qnh_unit"), NULL)
   m[]
@@ -176,7 +169,7 @@ parse_metar_wx <- function(x){
 #' @examples
 #' x <- metar.test$code
 #' parse_metar(x)
-#' parse_metar(x = "EGVP 281509Z 27011KT 5000 1000SW +SHRA BKN022CB 15/13 Q1007 BECMG 9999 NSW SCT030 RMK AMB BECMG BLU")
+#' parse_metar(x = "EGVP 281509Z 27011KT 5000 1000SW +SHRA BKN022CB 15/13 Q1007 BECMG 9999 NSW")
 #'
 parse_metar <- function(x, t = NULL, yyyy = year(Sys.Date()), mm = month(Sys.Date())){
 
