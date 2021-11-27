@@ -1,7 +1,7 @@
 library(metar)
 library(leaflet)
 
-x <- read_metar_noaa(hour = 10)
+x <- read_metar_noaa(hour = 5)
 dat.parsed <- parse_metar(x = x$metar, t =x$time_valid)
 dt <- validate_metar(dat.parsed)
 
@@ -13,7 +13,7 @@ dt.comb <- metar.stn[dt.comb, on = "icao"]
 
 # ---------------------------------------- Leaflet Numerical -----------------------------------------------
 
-id.para <- "ff"
+id.para <- "fx"
 pal <- colorNumeric("Spectral", reverse = TRUE, domain = NULL, na.color = "#eeefff")
 leaflet(data = dt.comb) %>%
   addTiles() %>%

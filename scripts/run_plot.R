@@ -25,23 +25,24 @@ id.icao <- c("PTRO", "PTYA", "BIKF", "YGEL", "LSZH", "LSZA", "FTTJ", "GABS", "GC
          "UUDD", "GCXO", "WSSS", "BGTL", "SBMN", "OMDB", "KBOS")
 
 gl <- c("BGBW", "BGKK")
+gb <- c( "EGPB", "EGNT")
 
 # ---------------------------------------- Plot Metargram -----------------------------------------------
 
-id.icao <- "BGBW" #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
+id.icao <- "EGPH" #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
 
-folder <- "gl"
+folder <- "gb"
 date.end <- Sys.Date() #  "2021-04-01"
 date.start <- date.end - 2 #Sys.Date() - 14  "2021-04-01"
 
 dir.plot <- file.path(dir.base, folder)
 dir.create(dir.plot, showWarnings = F)
 
-void <- lapply(id.icao, function(id){
+void <- lapply(id.icao, function(id.icao){
   # id <- "LSZH" #CYYT RCFN  RCKH   URSS URKK LTFH LICZ URKA
-  cat(id, " ", metar.stn[icao == id, ap_name], as.character(date.start), as.character(date.end), "\n")
+  cat(id.icao, " ", metar.stn[icao == id.icao, ap_name], as.character(date.start), as.character(date.end), "\n")
 
-  dat.metar <- read_metar_mesonet(id_icao = id, date_start = date.start, date_end = date.end)
+  dat.metar <- read_metar_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end)
   if(nrow(dat.metar) == 0) return(NULL)
 
   dat.parsed <- parse_metar(x = dat.metar$metar, t = dat.metar$valid)
@@ -49,7 +50,7 @@ void <- lapply(id.icao, function(id){
   dat.plot <- cbind(dat.parsed, dat.parsed[, parse_metar_pw(pw)])
   dat.plot <- metar.stn[dat.plot, on = "icao"]
 
-  file.name <- file.path(dir.plot, sprintf("%s_%s_%s.png", id, stringr::str_remove(dat.plot$ap_name[1], "\\/|\\?"), substr(date.end, 1, 10)))
+  file.name <- file.path(dir.plot, sprintf("%s_%s_%s.png", id.icao, stringr::str_remove(dat.plot$ap_name[1], "\\/|\\?"), substr(date.end, 1, 10)))
 
   png(file.name, width = 1600, height = 900, units = "px", res = 96)
   plot_metargram(dat = dat.plot, cex = 1.3)
