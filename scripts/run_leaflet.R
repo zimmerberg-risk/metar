@@ -1,7 +1,10 @@
 library(metar)
 library(leaflet)
+library(data.table)
 
-x <- read_metar_noaa(hour = 10)
+x <- lapply(6:9, read_metar_noaa)
+x <- rbindlist(x)
+
 dat.parsed <- parse_metar(x = x$metar, t =x$time_valid)
 dt <- validate_metar(dat.parsed)
 
@@ -9,11 +12,16 @@ dt.pw <- parse_metar_pw(dt$pw)
 dt.cld <- parse_metar_cld(dt$cld)
 dt.rvr <- parse_metar_rvr(dt$rvr)
 dt.comb <- cbind(dt, dt.pw, dt.cld, dt.rvr)
-dt.comb <- metar.stn[dt.comb, on = "icao"]
+dt.comb <- metar.stn[dt.comb, on = "icao"][!is.na(lon)]
 
+dt.comb[order(time), `:=`(dt = time - data.table::shift(time, n = 3, fill = NA), dp = qnh - data.table::shift(qnh, n = 3, fill = NA)), icao]
+dt.comb[, dp_3h := dp/(3/as.numeric(dt, "hours"))]
+
+dt.comb <- dt.comb[, .SD[which.max(time)], icao]
+dt.comb[order(dp_3h)]
 # ---------------------------------------- Leaflet Numerical -----------------------------------------------
 
-id.para <- "ff"
+id.para <- "dp_3h"
 pal <- colorNumeric("Spectral", reverse = TRUE, domain = NULL, na.color = "#eeefff")
 leaflet(data = dt.comb) %>%
   addTiles() %>%
