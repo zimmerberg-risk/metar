@@ -186,7 +186,7 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
 
   # Pressure
   lag <- as.integer(3600*3/dt)
-  brks <- c(-15, seq(-9, 9, 2), 15)
+  brks <- c(-25,-15, seq(-9, 9, 2), 15, 25)
   cols <- grDevices::colorRampPalette(c("dodgerblue2", "white", "firebrick"))(length(brks) - 1)
   dt.p <- dat[, .(time, dt = as.numeric(time - shift(time, lag), "secs"), dp = qnh - shift(qnh, lag))]
   dt.p[, col := cut(dp, brks, cols)]
