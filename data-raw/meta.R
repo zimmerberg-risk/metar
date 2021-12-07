@@ -20,6 +20,10 @@ l <- lapply(sheets, function(i){
   do.call("use_data", list(as.name(n), overwrite = TRUE, internal = FALSE))
 })
 
+#' Missing:
+#' EQ.. (EQYD) US Mil
+
+
 read_aviationweather <- function(){
   url.station <- "https://www.aviationweather.gov/docs/metar/stations.txt"
   col.names <- c("state", "name", "icao", "iata", "synop", "lat_deg", "lat_min", "lon_deg", "lon_min", "z", "M",  "N",  "V",  "U",  "A", "C", "ctry")
@@ -84,6 +88,5 @@ expression({
 
 # Save
 usethis:::use_data(metar.stn, overwrite = TRUE, internal = FALSE)
-
 
 

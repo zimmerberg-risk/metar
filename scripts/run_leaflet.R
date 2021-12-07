@@ -21,7 +21,6 @@ dt.comb <- dt.comb[, .SD[which.max(time)], icao]
 dt.comb[order(dp_3h)]
 # ---------------------------------------- Leaflet Numerical -----------------------------------------------
 
-id.para <- "dp_3h"
 pal <- colorNumeric("Spectral", reverse = TRUE, domain = NULL, na.color = "#eeefff")
 leaflet(data = dt.comb) %>%
   addTiles() %>%

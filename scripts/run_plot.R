@@ -22,6 +22,7 @@ id.icao <- sapply(unique(dt.cities$name[]), function(i) metar.stn[active == T]$i
 
 au <- c("YAYE", "YSSY", "YMML", "YPPH", "YMLT", "YPDN", "NZAA", "NZCH", "NFNA", "NVVV")
 gl <- c("BGBW", "BGKK")
+
 cn <- c("ZSPD", "ZSNB")
 fr <- c("LFTW", "LFMT", "LFMV")
 es <- "GCLA"
@@ -33,6 +34,12 @@ gb <- c("EGJJ")
 # ---------------------------------------- Plot Metargram -----------------------------------------------
 
 id.icao <- gb #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
+gb <- c( "EGPB", "EGNT")
+
+# ---------------------------------------- Plot Metargram -----------------------------------------------
+
+id.icao <- "EGPH" #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
+
 folder <- "gb"
 date.end <- Sys.Date() #  "2021-04-01"
 date.start <- date.end - 2 #Sys.Date() - 14  "2021-04-01"
