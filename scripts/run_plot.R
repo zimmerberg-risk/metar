@@ -30,17 +30,18 @@ ww <- c("PGSN", "PGRO", "PGUM", "RJAW", "PTRO", "PTYA", "BIKF", "YGEL", "LSZH", 
          "UUDD", "GCXO", "WSSS", "BGTL", "SBMN", "OMDB", "KBOS")
 jp <- c("RJTT", "RJAA", "RJTE", "RJNS")
 gr <- c("LGKR", "LGZA", "LGKF")
-gb <- c("EGJJ")
-# ---------------------------------------- Plot Metargram -----------------------------------------------
-
-id.icao <- gb #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
 gb <- c( "EGPB", "EGNT")
+ie <- c("EIKY", "EINN")
 
 # ---------------------------------------- Plot Metargram -----------------------------------------------
 
-id.icao <- "EGPH" #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
+id.icao <- ie #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
 
-folder <- "gb"
+
+# ---------------------------------------- Plot Metargram -----------------------------------------------
+folder <- "ie"
+id.icao <-  get(folder) #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
+
 date.end <- Sys.Date() #  "2021-04-01"
 date.start <- date.end - 2 #Sys.Date() - 14  "2021-04-01"
 

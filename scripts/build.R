@@ -16,14 +16,16 @@ usethis:::use_data(
 
 # Document and check
 devtools::document()
+
 devtools::check()
 devtools::build_readme()
 devtools::build_vignettes()
 
 # Build and install local
 p <- devtools::build()
-detach(sprintf("package:%s", pkg.name), unload = TRUE, character.only = TRUE)
+detach(name = sprintf("package:%s", pkg.name), character.only = TRUE,  unload = TRUE)
 devtools::install_local(p, force = TRUE, upgrade = "never", build_manual = T, build_vignettes = T)
+
 devtools::build_site()
 
 ## ------------------------------------- Install from Github --------------------------------------
