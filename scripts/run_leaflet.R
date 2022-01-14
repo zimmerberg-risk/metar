@@ -2,7 +2,7 @@ library(metar)
 library(leaflet)
 library(data.table)
 
-x <- lapply(13:16, read_metar_noaa)
+x <- lapply(12:15, read_metar_noaa)
 x <- rbindlist(x)
 
 dat.parsed <- parse_metar(x = x$metar, t =x$time_valid)
@@ -21,7 +21,7 @@ dt.comb <- dt.comb[, .SD[which.max(time)], icao]
 dt.comb[order(dp_3h)][!is.na(dp_3h)]
 
 # ---------------------------------------- Leaflet Numerical -----------------------------------------------
-id.para <- "fx"
+id.para <- "td"
 
 pal <- colorNumeric("Spectral", reverse = TRUE, domain = NULL, na.color = "#eeefff")
 leaflet(data = dt.comb) %>%

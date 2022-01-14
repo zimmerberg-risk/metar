@@ -32,18 +32,18 @@ jp <- c("RJTT", "RJAA", "RJTE", "RJNS")
 gr <- c("LGKR", "LGZA", "LGKF")
 gb <- c( "EGPB", "EGNT")
 ie <- c("EIKY", "EINN")
-
+no <- c("ENBR", "ENGM")
 # ---------------------------------------- Plot Metargram -----------------------------------------------
 
-id.icao <- ie #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
+id.icao <- "ENGM" #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
 
 
 # ---------------------------------------- Plot Metargram -----------------------------------------------
-folder <- "ie"
+folder <- "no"
 id.icao <-  get(folder) #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
 
 date.end <- Sys.Date() #  "2021-04-01"
-date.start <- date.end - 2 #Sys.Date() - 14  "2021-04-01"
+date.start <- date.end - 3 #Sys.Date() - 14  "2021-04-01"
 
 dir.plot <- file.path(dir.base, folder)
 dir.create(dir.plot, showWarnings = F)
