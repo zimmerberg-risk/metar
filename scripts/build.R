@@ -23,7 +23,7 @@ devtools::build_vignettes()
 
 # Build and install local
 p <- devtools::build()
-detach(name = sprintf("package:%s", pkg.name), character.only = TRUE,  unload = TRUE)
+#detach(name = sprintf("package:%s", pkg.name), character.only = TRUE,  unload = TRUE)
 devtools::install_local(p, force = TRUE, upgrade = "never", build_manual = T, build_vignettes = T)
 
 devtools::build_site()
