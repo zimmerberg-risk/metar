@@ -4,5 +4,10 @@
 ^scripts$
 ^LICENSE.md$
 ^doc$
+^docs$
 ^Meta$
 ^data-raw$
+<<<<<<< HEAD
+=======
+^_config.yml$
+>>>>>>> 46b2456890a1d22e7475a46e704cd4efc518a43d

@@ -32,7 +32,7 @@ Install the latest stable version from [GitHub](https://github.com/m-saenger/met
 
 ``` r
 # install.packages("devtools") 
-devtools::install_github("m-saenger/metar@0.4.0", upgrade = "never")
+devtools::install_github("m-saenger/metar@0.9.0", upgrade = "never")
 ```
 
 This package depends on **data.table**, **stringr**, **readr** and **lubridate**.
@@ -45,10 +45,10 @@ This package depends on **data.table**, **stringr**, **readr** and **lubridate**
 library(metar)
 
 ## read raw data from Mesonet website
-dat <- read_mesonet("LSZH", "2021-03-15", "2021-03-28")
+dat <- read_metar_mesonet("LSZH", date_start = "2021-03-15", date_end = "2021-03-28")
 
 ## parse METAR code
-dat.parsed <- parse_metar(x = dat$metar, date = dat$valid)
+dat.parsed <- parse_metar(x = dat$metar, t = dat$valid)
 
 # Structure  (subset of columns)
 print(dat.parsed[1:10, .(metar, tt, qnh)])
@@ -82,11 +82,11 @@ ggplot(dat.parsed, aes(time, tt)) +
 
 ```{r plot2}
 # Process cloud groups (1-4)
-dat.cld <- metar_clouds(dat.parsed$cl)    
+dat.cld <- parse_metar_cld(dat.parsed$cld)    
 dat.cld$time <- dat.parsed$time
 
 # Structure (subset of columns)
-print(dat.cld[1:10, .(time, cld_levels,  cld_1 , cld_amt_1, cld_hgt_1, cld_type_1 )])
+print(dat.cld[1:10, .(time, cld_lay,  cld_amt_1, cld_hgt_1, cld_type_1 )])
 
 ggplot(dat.cld, aes(time, cld_hgt_1)) +
   geom_path() +
@@ -99,10 +99,10 @@ ggplot(dat.cld, aes(time, cld_hgt_1)) +
 
 ```{r plot3}
 # Parse present weather group
-dat.pw <- dat.parsed[, metar_pw(pw)]
+dat.pw <- dat.parsed[, parse_metar_pw(pw)]
 
 # Structure (subset of columns)
-print(dat.pw[1:10, .(pw_grp_1, pw_grp_2, re, PP_SOLID, PP_LIQUID, sigwx)])
+print(dat.pw[1:10, .(pw_grp_1, pw_grp_2, PP_SOLID, PP_LIQUID, sigwx)])
 
 # Bind data
 dat.plot <- cbind(dat.parsed, dat.pw)

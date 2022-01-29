@@ -15,5 +15,5 @@ get_range(x, para)
 Determine value range
 }
 \author{
-M. Saenger
+M. Saenger, Zimmerberg Risk Analytics GmbH
 }

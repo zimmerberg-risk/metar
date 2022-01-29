@@ -1,3 +1,9 @@
+## metar 0.9.0
+* Complete rebuild
+* File reading based on `vroom` package
+* Performance improvements: Parse functions almost completely based on vectorised functions
+
+
 ## metar 0.4.0
 
 * Station meta data available within package: `metar.stn`. Column `active` indicates whether station reports on regular basis (Source: http://www.weathergraphics.com/identifiers/)

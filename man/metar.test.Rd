@@ -5,7 +5,7 @@
 \alias{metar.test}
 \title{METAR Test Data Set}
 \format{
-An object of class \code{data.table} (inherits from \code{data.frame}) with 24 rows and 3 columns.
+An object of class \code{data.table} (inherits from \code{data.frame}) with 25 rows and 3 columns.
 }
 \usage{
 metar.test

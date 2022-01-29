@@ -1,5 +1,8 @@
+
+## --------------------------------------------------- Auxilliary  ---------------------------------------------------
+
 #' Set Alpha
-#'
+#' @author M. Saenger, Zimmerberg Risk Analytics GmbH
 #' @param x Colour vector
 #' @param alpha Transparency
 #' @export
@@ -45,7 +48,7 @@ multicolor.title <- function(main, col.main, collapse='', ...) {
 
 #' Fill time gaps
 #'
-#' @author M. Saenger
+#' @author M. Saenger, Zimmerberg Risk Analytics GmbH
 #' @param x time vector
 #' @export
 #'
@@ -60,7 +63,7 @@ fill_time_gaps <- function(x){
 
 #' Determine value range
 #'
-#' @author M. Saenger
+#' @author M. Saenger, Zimmerberg Risk Analytics GmbH
 #' @param x vector
 #' @param para parameter
 #' @export
@@ -73,10 +76,12 @@ get_range <- function(x, para){
   range(x, na.rm = TRUE)
 }
 
+## --------------------------------------------------- Plot  ---------------------------------------------------
+
 
 #' Plot METARgram
 #'
-#' @author M. Saenger
+#' @author M. Saenger, Zimmerberg Risk Analytics GmbH
 #' @param dat data set
 #' @param cex global text size
 #' @param attribution data source
@@ -94,9 +99,19 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
   dt.time$icao <- dat$icao[1]
   dat <- dat[dt.time, on = c("time", "icao")]
 
+  # Map airport info
+  dat <- metar.stn[dat, on = "icao"]
+
   # Average time interval
   dt <- as.numeric(stats::median(diff(dat$time), na.rm = TRUE), "secs")
   time.ticks <- pretty(dat$time, 8)
+  time.int.tick <- as.numeric(median(diff(time.ticks)), "days")
+
+  # Determine axis formats as axis.POSIXct does not work as expected
+  time.int <- c(0, 0.5, 1, 2, 5, 16, 50, 100, 1000, 10000) # in hours
+  time.formats <- c("%H:%M", "%H", "%d. %H", "%d", "%d.%m", "%m", "%m.%Y", "%Y", "%Y")
+  time.format <- time.formats[findInterval(time.int.tick, time.int)]
+  time.str <- paste(format(range(dt.time$time), "%Y-%m-%d %H:%M"), collapse = " - ")
 
   # Layout
   fill.alpha <- 0.2
@@ -107,12 +122,13 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
 
   # Plot
   def.par <- graphics::par(no.readonly = TRUE) # save default, for resetting...
-  graphics::layout(mat, heights = c(0.05, rep((1 - 0.05 - 0.02)/4, 3),(1 - 0.05 - 0.02)/4 + 0.02))
+  graphics::layout(mat, heights = c(0.06, rep((1 - 0.06 - 0.02)/4, 3),(1 - 0.06 - 0.02)/4 + 0.02))
 
   # Title
   graphics::par(mai = c(0, 0.5, 0.3, 0.1)*cex)
   graphics::plot.new()
   graphics::mtext(title, side = 3, line = 0, cex = cex*1.3, font=2, adj = 0, xpd = TRUE)
+  graphics::mtext(time.str, side = 3, line = -1.5, cex = cex, font=2, adj = 0, xpd = TRUE)
   graphics::mtext(sprintf("METARgram: https://github.com/m-saenger/metar\n%s", attribution), side = 3, line = 0, cex=cex*.8, font=1, adj = 1, xpd = TRUE)
 
   graphics::par(mai = c(0.1, 0.5, 0.3, 0.1)*cex, cex = cex, cex.lab = cex, cex.axis = cex*.9, cex.main = cex*1.0,
@@ -170,7 +186,7 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
 
   # Pressure
   lag <- as.integer(3600*3/dt)
-  brks <- c(-15, seq(-9, 9, 2), 15)
+  brks <- c(-25, -10, -7, -5, -3, -2, -1, -0.5, 0.5, 1, 2, 3, 5, 7, 10, 25)
   cols <- grDevices::colorRampPalette(c("dodgerblue2", "white", "firebrick"))(length(brks) - 1)
   dt.p <- dat[, .(time, dt = as.numeric(time - shift(time, lag), "secs"), dp = qnh - shift(qnh, lag))]
   dt.p[, col := cut(dp, brks, cols)]
@@ -219,7 +235,7 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
   graphics::rect(xleft = dat.pw$time, xright = shift(dat.pw$time, type = "lag"), ybottom = ylim[1], ytop = ylim[2],
                  col = set_alpha(dat.pw$pw_col, 0.75), lty = 0)
   graphics::grid(nx = NA, ny = NULL)
-  axis.POSIXct(1, x =  dat$time, at = time.ticks, tck=1, lty = "dotted", col = "lightgray")
+  axis.POSIXct(1, x = dat$time, at = time.ticks, format = time.format, tck=1, lty = "dotted", col = "lightgray")
 
   graphics::axis(2, c(100, 300, 1000, 3000, 10000)/1e3, tick = TRUE, las = 2, col.ticks	= "black")
   abline(h = c(100, 300, 1000, 3000, 10000)/1e3, lty = 3, col = "lightgray")

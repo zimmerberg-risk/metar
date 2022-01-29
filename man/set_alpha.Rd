@@ -18,3 +18,6 @@ Set Alpha
 set_alpha(x = c("red", "blue"), alpha = c(0.1, .3))
 
 }
+\author{
+M. Saenger, Zimmerberg Risk Analytics GmbH
+}
