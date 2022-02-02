@@ -3,13 +3,14 @@ library(maps)
 library(data.table)
 library(maps)
 
-dir.base <- "C:/Temp/metar"
+if(Sys.info()[["sysname"]] == "Darwin"){
+  dir.base <- "~/Temp/metar"
+} else {
+  dir.base <- "C:/Temp/metar"
+}
 
 # ---------------------------------------- Selection -----------------------------------------------
 get_metar_stn(fi.name = "^berli")
-
-stn <- get_metar_stn(fi.lat = c(40, 50), fi.lon = c(5, 15))$icao
-stn <- get_metar_stn(fi.ctry = "Switz")$icao
 
 # World cicties
 data(world.cities)
@@ -33,17 +34,15 @@ gr <- c("LGKR", "LGZA", "LGKF")
 gb <- c( "EGPB", "EGNT")
 ie <- c("EIKY", "EINN")
 no <- c("ENBR", "ENGM")
-# ---------------------------------------- Plot Metargram -----------------------------------------------
-
-id.icao <- "ENGM" #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
-
+ch <- c("LSZH", "LSGG", "LSZA", "LSZG", "LSZS", "LSZB")
+fr <- c("FMEE")
 
 # ---------------------------------------- Plot Metargram -----------------------------------------------
-folder <- "no"
+folder <- "fr"
 id.icao <-  get(folder) #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
 
 date.end <- Sys.Date() #  "2021-04-01"
-date.start <- date.end - 3 #Sys.Date() - 14  "2021-04-01"
+date.start <- date.end - 5 #Sys.Date() - 14  "2021-04-01"
 
 dir.plot <- file.path(dir.base, folder)
 dir.create(dir.plot, showWarnings = F)
