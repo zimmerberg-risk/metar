@@ -14,6 +14,7 @@
 #'
 read_metar_noaa <- function(hour, remote = TRUE, path, latest.only = TRUE){
   url <- sprintf("https://tgftp.nws.noaa.gov/data/observations/metar/cycles/%02dZ.TXT", hour)
+  httr::set_config(httr::config(ssl_verifypeer = 0L))
 
   if(remote){
     n <- 0 # Iterator
