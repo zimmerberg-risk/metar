@@ -12,16 +12,16 @@ if(Sys.info()[["sysname"]] == "Darwin"){
 # ---------------------------------------- Selection -----------------------------------------------
 get_metar_stn(fi.name = "^berli")
 
-# World cicties
-data(world.cities)
-dt.cities <- as.data.table(world.cities)
-setorder(dt.cities, -pop)
-dt.cities <- dt.cities[pop>1e4, .SD[1:5], country.etc]
-id.icao <- sapply(unique(dt.cities$name[]), function(i) metar.stn[active == T]$icao[grepl(i, metar.stn[active == T]$ap_name_long)][1])
+# # World cicties
+# data(world.cities)
+# dt.cities <- as.data.table(world.cities)
+# setorder(dt.cities, -pop)
+# dt.cities <- dt.cities[pop>1e4, .SD[1:5], country.etc]
+# id.icao <- sapply(unique(dt.cities$name[]), function(i) metar.stn[active == T]$icao[grepl(i, metar.stn[active == T]$ap_name_long)][1])
 
 # ---------------------------------------- Selection -----------------------------------------------
 
-au <- c("YAYE", "YSSY", "YMML", "YPPH", "YMLT", "YPDN", "NZAA", "NZCH", "NFNA", "NVVV")
+au <- c("YAYE", "YSSY", "YMML", "YPPH", "YMLT", "YPDN", "NZAA", "NZCH", "NFNA", "NVVV", "YBAS")
 gl <- c("BGBW", "BGKK")
 
 cn <- c("ZSPD", "ZSNB")

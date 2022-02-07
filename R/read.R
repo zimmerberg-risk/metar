@@ -18,10 +18,12 @@ read_metar_noaa <- function(hour, remote = TRUE, path, latest.only = TRUE){
   if(remote){
     n <- 0 # Iterator
     download <- FALSE
+    t <- tempfile()
 
     # Download (try up to 10 times due to unstable connectivity of server)
     while(n < 10 & download == FALSE){
-      txt <- vroom::vroom_lines(url, skip_empty_rows = TRUE)
+      void <- httr::GET(url = url, httr::write_disk(t, overwrite=TRUE))
+      txt <- vroom::vroom_lines(t, skip_empty_rows = TRUE)
       if(length(txt) > 100) download <- TRUE
       n <<- n + 1
       Sys.sleep(0.1)
