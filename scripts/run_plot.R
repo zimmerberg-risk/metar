@@ -10,7 +10,7 @@ if(Sys.info()[["sysname"]] == "Darwin"){
 }
 
 # ---------------------------------------- Selection -----------------------------------------------
-get_metar_stn(fi.name = "^berli")
+get_metar_stn(fi.ctry = "Ice")
 
 # # World cicties
 # data(world.cities)
@@ -36,9 +36,10 @@ ie <- c("EIKY", "EINN")
 no <- c("ENBR", "ENGM")
 ch <- c("LSZH", "LSGG", "LSZA", "LSZG", "LSZS", "LSZB")
 fr <- c("FMEE")
+ic <- c("BIKF", "BIEG", "BIAR")
 
 # ---------------------------------------- Plot Metargram -----------------------------------------------
-folder <- "fr"
+folder <- "ic"
 id.icao <-  get(folder) #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
 
 date.end <- Sys.Date() #  "2021-04-01"
