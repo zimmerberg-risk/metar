@@ -1,0 +1,99 @@
+---
+title: "Python Plugin to METAR R Libraries"
+author: "Matthias Sänger, Zimmerberg Risk Analytics GmbH"
+date: "13/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_hooks$set(eval = function(options) {
+  if (options$engine %in% c("bash", "python")) {
+    options$eval <- FALSE
+  }
+  options
+})
+```
+
+
+## Set up R environment
+
+Latest METAR R libraries are installed on `/prod` enviroment. Note that libraries built under R 3.X.X under possibly not compatible with those built under R 4.X.X. Make sure server runs R > 4.0.0. 
+
+Test R version
+``` {bash eval=FALSE}
+> R --version
+```
+
+
+### Modify local R profile 
+
+Makes sure R loads libraries from a specific path. R reads user `.Renviron` file upon start, thus the location of the libraries can be specified here. Caution: if Python script is run by some `sysuser` the according `.Renviron` file in the home dir needs be modifed.
+
+``` {bash eval=FALSE}
+nano ~/.Renviron
+```
+
+`R_LIBS=prod/...`
+
+### Check whether R profile works
+
+Open R in shell
+``` {bash eval=FALSE}
+> R
+```
+
+``` {R eval=FALSE}
+> .libPaths() # List paths where R looks for libraries
+[1] "C:/R/lib"                           "C:/Program Files/R/R-4.1.1/library"
+> library(metar.parsing) # Check whether library metar.parsing can be loaded
+> parse_metar_cld("FEW 005") # Test library
+# Should return table of parsed cloud group
+> quit("no") # Close R
+```
+
+Now R (and `rpy2`) should load libraries from the correct path.
+
+## Set up Python
+
+### rpy2
+R code can be run with `rpy2` framework: https://rpy2.github.io/doc/latest/html/index.html
+
+
+``` {bash}
+sudo pip3 install rpy2
+```
+
+### Demo script
+``` {Python eval=FALSE}
+
+import rpy2.robjects as robjects
+import pandas as pd
+
+from rpy2.robjects.packages import importr
+from rpy2.robjects import pandas2ri
+from rpy2.robjects.conversion import localconverter
+
+# Import METAR libraries
+metar_parser = importr("metar.parsing")
+metar_analytics = importr("metar.analytics")
+
+# Import cloud parser from R
+parse_metar_cld = robjects.r('parse_metar_cld')
+
+# sample data
+clouds_autometar = ["FEW030", "BKN070", "SCT050", "FEW080", "SCT299CB BKN300"]
+
+# Convert to R character vector
+r_clouds_autometar = robjects.StrVector(clouds_autometar)
+
+# Call R cloud parser
+r_result = parse_metar_cld(r_clouds_autometar)
+print(r_result)
+
+# Convert to pandas
+with localconverter(robjects.default_converter + pandas2ri.converter):
+  py_result = robjects.conversion.rpy2py(r_result)
+
+print(py_result)
+
+```
