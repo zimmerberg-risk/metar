@@ -32,25 +32,27 @@ ww <- c("PGSN", "PGRO", "PGUM", "RJAW", "PTRO", "PTYA", "BIKF", "YGEL", "LSZH", 
 jp <- c("RJTT", "RJAA", "RJTE", "RJNS")
 gr <- c("LGKR", "LGZA", "LGKF")
 gb <- c( "EGPB", "EGNT", "EGLL", "EGHQ")
-ie <- c("EIKY", "EINN")
+ie <- c("EINN")
 no <- c("ENBR", "ENGM")
 ch <- c("LSZH", "LSGG", "LSZA", "LSZG", "LSZS", "LSZB")
 fr <- c("FMEE")
 ic <- c("BIKF", "BIEG", "BIAR")
-
+de <- c("EDDH")
+dz = c("DAAG", "DAOO", "DAUG")
+ma <- c("GMFK")
 
 # ---------------------------------------- Plot Metargram -----------------------------------------------
-folder <- "gb"
+folder <- "ma"
 id.icao <-  get(folder) #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
 
 date.end <- Sys.Date() #  "2021-04-01"
-date.start <- date.end - 2 #Sys.Date() - 14  "2021-04-01"
+date.start <- date.end - 3 #Sys.Date() - 14  "2021-04-01"
 
 dir.plot <- file.path(dir.base, folder)
 dir.create(dir.plot, showWarnings = F)
 
 void <- lapply(id.icao, function(id.icao){
-  # id <- "LSZH" #CYYT RCFN  RCKH   URSS URKK LTFH LICZ URKA
+  # id.icao <- "DAOO" #CYYT RCFN  RCKH   URSS URKK LTFH LICZ URKA
   cat(id.icao, " ", metar.stn[icao == id.icao, ap_name], as.character(date.start), as.character(date.end), "\n")
 
   dat.metar <- read_metar_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end)

@@ -2,7 +2,7 @@ library(metar)
 library(leaflet)
 library(data.table)
 
-x <- lapply(4:5, read_metar_noaa)
+x <- lapply(16:18, read_metar_noaa)
 x <- rbindlist(x)
 
 dat.parsed <- parse_metar(x = x$metar, t =x$time_valid)
@@ -18,7 +18,7 @@ dt.comb <- metar.stn[dt.comb, on = "icao"][!is.na(lon)]
 dt.comb <- dt.comb[, .SD[which.max(time)], icao]
 
 # ---------------------------------------- Leaflet Numerical -----------------------------------------------
-id.para <- "fx"
+id.para <- "vis"
 dt.comb[, rad := fifelse(is.na(get(id.para)), 2, 7)]
 pal <- colorNumeric("Spectral", reverse = TRUE, domain = NULL, na.color = "#eeefff")
 leaflet(data = dt.comb) %>%
@@ -43,3 +43,13 @@ leaflet(data = dt.map) %>%
   addCircleMarkers(~lon, ~lat, stroke = T, radius = ~rad, weight = 1, color = ~pal(dt.map[[id.para]]), fillColor = ~pal(dt.map[[id.para]]),
                    fillOpacity = .5, popup = ~ sprintf("<p>%s %s (%sm)</p><p>%s</p><p>%s</p>", icao, ap_name, elev, time, metar)) %>%
   addLegend(pal = pal, values = dt.map[[id.para]], opacity = .7)
+
+# ---------------------------------------- PW -----------------------------------------------
+id.para <- "pw"
+dt.map <- dt.comb[!is.na(pw)]
+dt.map[, rad := fifelse(is.na(get(id.para)), 2, 7)]
+
+leaflet(data = dt.map[, .(lon, lat, pw)]) %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addLabelOnlyMarkers(~lon, ~lat, label = ~pw,  labelOptions = labelOptions(textsize = "16pt", noHide = T, direction = 'top', textOnly = T))
+
