@@ -29,24 +29,26 @@ fr <- c("LFTW", "LFMT", "LFMV")
 es <- "GCLA"
 ww <- c("PGSN", "PGRO", "PGUM", "RJAW", "PTRO", "PTYA", "BIKF", "YGEL", "LSZH", "LSZA", "FTTJ", "GABS", "GCXO", "NZSP", "LOWI",
          "UUDD", "GCXO", "WSSS", "BGTL", "SBMN", "OMDB", "KBOS")
-jp <- c("RJTT", "RJAA", "RJTE", "RJNS")
+jp <- c("RJTT", "RJAA", "RJNS", "RJAW")
 gr <- c("LGKR", "LGZA", "LGKF")
 gb <- c( "EGPB", "EGNT", "EGLL", "EGHQ")
 ie <- c("EINN")
 no <- c("ENBR", "ENGM")
-ch <- c("LSZH", "LSGG", "LSZA", "LSZG", "LSZS", "LSZB")
+ch <- c("LSZH", "LSGG", "LSZA", "LSZG", "LSZS", "LSZR", "LSZB", "LSGS")
 fr <- c("FMEE")
 ic <- c("BIKF", "BIEG", "BIAR")
 de <- c("EDDH")
 dz = c("DAAG", "DAOO", "DAUG")
 ma <- c("GMFK")
+sa <- c("FALE", "FBSK", "FAMM")
+ind <- c("VIDP")
 
 # ---------------------------------------- Plot Metargram -----------------------------------------------
-folder <- "ma"
+folder <- "ch"
 id.icao <-  get(folder) #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
 
-date.end <- Sys.Date() #  "2021-04-01"
-date.start <- date.end - 3 #Sys.Date() - 14  "2021-04-01"
+date.end <- Sys.Date()#  "2021-04-01" as.Date("2000-04-29")
+date.start <- date.end - 2 #Sys.Date() - 14  "2021-04-01"
 
 dir.plot <- file.path(dir.base, folder)
 dir.create(dir.plot, showWarnings = F)
