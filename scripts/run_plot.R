@@ -3,11 +3,7 @@ library(maps)
 library(data.table)
 library(maps)
 
-if(Sys.info()[["sysname"]] == "Darwin"){
-  dir.base <- "~/Temp/metar"
-} else {
-  dir.base <- "C:/Temp/metar"
-}
+dir.base <- file.path(dirs$prod, "demo", "metar")
 
 # ---------------------------------------- Selection -----------------------------------------------
 get_metar_stn(fi.ctry = "Ice")
@@ -21,30 +17,50 @@ get_metar_stn(fi.ctry = "Ice")
 
 # ---------------------------------------- Selection -----------------------------------------------
 
-au <- c("YAYE", "YSSY", "YMML", "YPPH", "YMLT", "YPDN", "NZAA", "NZCH", "NFNA", "NVVV", "YBAS")
-gl <- c("BGBW", "BGKK")
+ww <- c("RJAW", "PTRO", "PTYA", "BIKF", "YGEL", "LSZH", "LSZA", "FTTJ", "GABS", "GCXO", "NZSP", "LOWI",
+        "UUDD", "GCXO", "WSSS", "BGTL", "SBMN", "OMDB", "KBOS")
 
-cn <- c("ZSPD", "ZSNB")
-fr <- c("LFTW", "LFMT", "LFMV")
+gu <- c("PGSN", "PGRO", "PGUM")
+au <- c("YAYE", "YSSY", "YMML", "YPPH", "YMLT", "YPDN", "NZAA", "NZCH", "NFNA", "NVVV", "YBAS")
+nz <- c("NZAA", "NZWN", "YSNF")
+cn <- c("ZJSY", "ZJHK", "VMMC", "VHHH")
+jp <- c("RJTT", "RJAA", "RJNS", "RJAW", "RODN", "RODE", "ROTM", "ROIG", "ROYN", "RORS", "ROMY", "ROAH", "RJFE", "RJDT", "RJDB", "RJNK", "RJNT",
+        "RJKA", "RJKI", "RJFG", "RJFK", "RJFM", "RJFY", "RJFT", "RJFU")
+kr = c("RKPM", "RKPC", "RKPK", "RKJB")
+mt = c("FIMP", "FMEE", "FMEP")
+
+fr <- c("LFTW", "LFMT", "LFMV", "LFKJ", "LFKC", "LFRB", "LFRL")
+it <- c("LIPY", "LIVF")
 es <- "GCLA"
-ww <- c("PGSN", "PGRO", "PGUM", "RJAW", "PTRO", "PTYA", "BIKF", "YGEL", "LSZH", "LSZA", "FTTJ", "GABS", "GCXO", "NZSP", "LOWI",
-         "UUDD", "GCXO", "WSSS", "BGTL", "SBMN", "OMDB", "KBOS")
-jp <- c("RJTT", "RJAA", "RJNS", "RJAW")
+gl <- c("BGBW", "BGKK")
 gr <- c("LGKR", "LGZA", "LGKF")
 gb <- c( "EGPB", "EGNT", "EGLL", "EGHQ")
 ie <- c("EINN")
 no <- c("ENBR", "ENGM")
 ch <- c("LSZH", "LSGG", "LSZA", "LSZG", "LSZS", "LSZR", "LSZB", "LSGS")
-fr <- c("FMEE")
-ic <- c("BIKF", "BIEG", "BIAR")
+ic <- c("BIKF", "BIEG", "BIAR", "BIRK")
 de <- c("EDDH")
+
+ind <- c("VIDP")
 dz = c("DAAG", "DAOO", "DAUG")
 ma <- c("GMFK")
 sa <- c("FALE", "FBSK", "FAMM")
-ind <- c("VIDP")
+uae <- c("OMDB", "OMAD", "OMRK", "OMFJ", "OOKB")
+qa <- c("OTHH", "OTBH")
+pk <- c("OPKC", "OPNH", "OPIS")
 
+
+ca <- c("CWSA", "CYQY", "CWRA", "CYYT", "CYQX")
+ca <- c("CYQY", "CYHZ", "CWBV", "CYHZ", "CWEF", "CWGR", "CXMI", "CWRN", "CWEP")
+bm <- c("TXKF")
+cl <- c("SCNT", "SCFM", "SCCI")
+ak <- c("PACZ", "PASN", "PAOO", "PAKI", "PADK")
+us <- c("KSFO")
+us.fl <- c("KEYW", "KSRQ", "KSPG","KVNC", "KPGD", "KRSW", "KAPF")
+us.tx <- c("KSAT", "KDFW", "KAUS")
 # ---------------------------------------- Plot Metargram -----------------------------------------------
-folder <- "ch"
+
+folder <- "fr"
 id.icao <-  get(folder) #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
 
 date.end <- Sys.Date()#  "2021-04-01" as.Date("2000-04-29")
@@ -54,7 +70,7 @@ dir.plot <- file.path(dir.base, folder)
 dir.create(dir.plot, showWarnings = F)
 
 void <- lapply(id.icao, function(id.icao){
-  # id.icao <- "DAOO" #CYYT RCFN  RCKH   URSS URKK LTFH LICZ URKA
+  # id.icao <- "PGUM"
   cat(id.icao, " ", metar.stn[icao == id.icao, ap_name], as.character(date.start), as.character(date.end), "\n")
 
   dat.metar <- read_metar_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end)

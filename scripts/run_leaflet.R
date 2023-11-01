@@ -2,12 +2,12 @@ library(metar)
 library(leaflet)
 library(data.table)
 
-x <- lapply(10, read_metar_noaa)
+x <- lapply(4:6, read_metar_noaa)
 x <- rbindlist(x)
 
 dat.parsed <- parse_metar(x = x$metar, t =x$time_valid)
 dt <- validate_metar(dat.parsed)
-dt[grep("^BI", icao)]
+dt[grep("^FAL", icao)]
 
 dt.pw <- parse_metar_pw(dt$pw)
 dt.cld <- parse_metar_cld(dt$cld)

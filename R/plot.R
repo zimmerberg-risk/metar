@@ -95,6 +95,8 @@ plot_metargram <- function(dat, cex = .9, attribution = "Data: Iowa State Univ. 
   }
   # Fill time gaps
   setorder(dat, time)
+  # dat[, time := lubridate::floor_date(time, "15 min")]
+  # dat <- unique(dat, by = "time")
   dt.time <- data.table(time = fill_time_gaps(x = dat$time))
   dt.time$icao <- dat$icao[1]
   dat <- dat[dt.time, on = c("time", "icao")]
