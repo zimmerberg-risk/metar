@@ -2,7 +2,7 @@ library(metar)
 library(leaflet)
 library(data.table)
 
-x <- lapply(4:6, read_metar_noaa)
+x <- lapply(3:5, read_metar_noaa)
 x <- rbindlist(x)
 
 dat.parsed <- parse_metar(x = x$metar, t =x$time_valid)

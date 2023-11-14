@@ -17,16 +17,16 @@ read_metar_noaa <- function(hour, remote = TRUE, path, latest.only = TRUE){
   httr::set_config(httr::config(ssl_verifypeer = 0L))
 
   if(remote){
-    n <- 0 # Iterator
+    ii <- 0 # Iterator
     download <- FALSE
     t <- tempfile()
 
     # Download (try up to 10 times due to unstable connectivity of server)
-    while(n < 10 & download == FALSE){
+    while(ii < 10 & download == FALSE){
       void <- httr::GET(url = url, httr::write_disk(t, overwrite=TRUE))
       txt <- vroom::vroom_lines(t, skip_empty_rows = TRUE)
       if(length(txt) > 100) download <- TRUE
-      n <<- n + 1
+      ii <<- ii + 1
       Sys.sleep(0.1)
     }
   } else {
