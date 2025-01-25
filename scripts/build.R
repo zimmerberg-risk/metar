@@ -44,10 +44,12 @@ expression({
 
   # Install tagged version
   devtools::install_github(sprintf("%s/%s@%s", github, pkg.name, version))
+
   # Install latest
   sprintf("devtools::install_github(\"%s/%s\")", github, pkg.name)
+  sprintf("Rscript --no-save --no-restore -e 'devtools::install_github(\"%s/%s\")'", github, pkg.name)
   devtools::install_github(sprintf("%s/%s", github, pkg.name))
-
+  #require(devtools); remove.packages("arrow"); install_version("arrow", version = "11.0.0.2", repos = "http://cran.us.r-project.org")
 
 })
 
