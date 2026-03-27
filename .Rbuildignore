@@ -7,7 +7,14 @@
 ^docs$
 ^Meta$
 ^data-raw$
-<<<<<<< HEAD
-=======
 ^_config.yml$
->>>>>>> 46b2456890a1d22e7475a46e704cd4efc518a43d
+^build\.R$
+^vignettes/python-setup\.Rmd$
+^\.Rhistory$
+^\.gitignore$
+^\.git$
+^\.Rproj\.user$
+^\.{2}Rcheck$
+^man/\.DS_Store$
+^scripts/\.gitignore$
+^vignettes/\.gitignore$

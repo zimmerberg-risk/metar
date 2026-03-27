@@ -1,12 +1,14 @@
 Package: metar
 Type: Package
-Title: Parse METAR reports
+Title: Parse METAR Reports
 Version: 0.9.1
 Authors@R: 
     person(given = "Matthias",
            family = "Sänger",
            role = c("aut", "cre"),
            email = "ms@zimmerberg-risk.ch")
+Author: Matthias Sänger [aut, cre]
+Maintainer: Matthias Sänger <ms@zimmerberg-risk.ch>
 Description: Parse and process METAR reports.
 License: CC BY 4.0
 Encoding: UTF-8
@@ -14,19 +16,20 @@ LazyData: true
 Depends:
     R (>= 2.15)
 Imports:
+    curl,
     data.table,
-    rlang,
-    vroom,
-    stringr,
+    httr,
     lubridate,
-    curl
+    rlang,
+    stringr,
+    vroom
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Suggests: 
-    httr,
     rmarkdown,
     knitr,
     leaflet,
     ggplot2,
-    patchwork
+    patchwork,
+    ggrepel
 VignetteBuilder: knitr

@@ -23,6 +23,7 @@ ww <- c("RJAW", "PTRO", "PTYA", "BIKF", "YGEL", "LSZH", "LSZA", "FTTJ", "GABS", 
 gu <- c("PGSN", "PGRO", "PGUM")
 au <- c("YAYE", "YSSY", "YMML", "YPPH", "YMLT", "YPDN", "NZAA", "NZCH", "NFNA", "NVVV", "YBAS")
 au.darwin <- c("YPDN", "YPYM", "YPWR", "YBRK")
+au.west <- c("YPLM", "YBAS", "YMLT", "YPDN", "YPPH")
 
 nz <- c("NZAA", "NZWN", "YSNF")
 cn <- c("ZJSY", "ZJHK", "VMMC", "VHHH")
@@ -67,7 +68,7 @@ us.fl <- c("KEYW", "KSRQ", "KSPG","KVNC", "KPGD", "KRSW", "KAPF")
 us.tx <- c("KSAT", "KDFW", "KAUS")
 # ---------------------------------------- Plot Metargram -----------------------------------------------
 
-folder <- "channel.isl"
+folder <- "au.west"
 id.icao <-  get(folder) #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
 
 date.end <- Sys.Date()#  "2021-04-01" as.Date("2000-04-29")
