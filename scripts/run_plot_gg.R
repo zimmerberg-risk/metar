@@ -13,20 +13,18 @@ dir.repo <- if(length(arg.file) && !is.na(arg.file)) {
   normalizePath(getwd(), winslash = "/", mustWork = FALSE)
 }
 
-if(!exists("plot_metargram_gg", mode = "function")) {
-  file.local.plot <- file.path(dir.repo, "R", "plot-gg.R")
-  if(file.exists(file.local.plot)) {
-    sys.source(file.local.plot, envir = .GlobalEnv)
-    message(sprintf("Loaded local plotting code from %s", file.local.plot))
-  } else {
-    stop("`plot_metargram_gg()` is not available in the installed package and local R/plot-gg.R was not found.", call. = FALSE)
-  }
+file.local.plot <- file.path(dir.repo, "R", "plot-gg.R")
+if(file.exists(file.local.plot)) {
+  sys.source(file.local.plot, envir = .GlobalEnv)
+  message(sprintf("Loaded local plotting code from %s", file.local.plot))
+} else if(!exists("plot_metargram_gg", mode = "function")) {
+  stop("`plot_metargram_gg()` is not available in the installed package and local R/plot-gg.R was not found.", call. = FALSE)
 }
 
 station_groups <- list(
   demo = "KFFO",
   ch = c("LSZH", "LSGG", "LSZA", "LSZG", "LSZS", "LSZR", "LSZB", "LSGS"),
-  au_west = c("YPLM", "YBAS", "YMLT", "YPDN", "YPPH"),
+  au_west = c("YPLM", "YBAS", "YMLT", "YPDN", "YPPH", "YPEA", "YPJT"),
   ww = c("RJAW", "PTRO", "PTYA", "BIKF", "YGEL", "LSZH", "LSZA", "FTTJ", "GABS", "GCXO", "NZSP", "LOWI")
 )
 
@@ -55,7 +53,7 @@ dir.create(dir_panels, recursive = TRUE, showWarnings = FALSE)
 dir.create(dir_combined, recursive = TRUE, showWarnings = FALSE)
 message(sprintf("Writing plots under %s", dir_base))
 
-save_plot_png <- function(plot, filename, width, height, dpi = 144) {
+save_plot_png <- function(plot, filename, width, height, dpi = 140) {
   device <- if(requireNamespace("ragg", quietly = TRUE)) ragg::agg_png else "png"
   ggplot2::ggsave(
     filename = filename,
@@ -102,7 +100,7 @@ save_plot_set <- function(plots, id, suffix = format(date_end, "%Y-%m-%d")) {
     plot = plots$combined,
     filename = fn_combined,
     width = 12,
-    height = 12
+    height = 14
   )
   message(sprintf("Saved combined chart for %s -> %s", id, fn_combined))
 

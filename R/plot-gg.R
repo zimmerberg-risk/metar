@@ -10,7 +10,7 @@
 plot_metargram_gg <- function(
   dat,
   attribution = "Data: Iowa State Univ. mesonet.agron.iastate.edu/",
-  base_size = 15,
+  base_size = 19,
   base_family = "Oswald"
 ) {
   metargram_require_namespaces()
@@ -25,20 +25,25 @@ plot_metargram_gg <- function(
     overview = metargram_panel_overview(prep, show_x = TRUE, square = TRUE),
     wind = metargram_panel_wind(prep, show_x = TRUE, square = TRUE),
     pressure = metargram_panel_pressure(prep, show_x = TRUE, square = TRUE),
-    visibility = metargram_panel_visibility(prep, show_x = TRUE, square = TRUE)
+    visibility = metargram_panel_visibility(prep, show_x = TRUE, square = TRUE),
+    tendency = metargram_panel_tendency(prep, show_x = TRUE, square = TRUE),
+    sigwx = metargram_panel_sigwx(prep, show_x = TRUE, square = TRUE)
   )
   panels_combined <- list(
-    overview = metargram_panel_overview(prep, show_x = TRUE, square = FALSE),
-    wind = metargram_panel_wind(prep, show_x = TRUE, square = FALSE),
+    overview = metargram_panel_overview(prep, show_x = FALSE, square = FALSE),
+    wind = metargram_panel_wind(prep, show_x = FALSE, square = FALSE),
     pressure = metargram_panel_pressure(prep, show_x = TRUE, square = FALSE),
-    visibility = metargram_panel_visibility(prep, show_x = TRUE, square = FALSE)
+    visibility = metargram_panel_visibility(prep, show_x = TRUE, square = FALSE),
+    tendency = metargram_panel_tendency(prep, show_x = FALSE, square = FALSE),
+    sigwx = metargram_panel_sigwx(prep, show_x = FALSE, square = FALSE)
   )
 
   combined <- (
-    (panels_combined$overview | panels_combined$wind) /
+    (panels_combined$tendency | panels_combined$sigwx) /
+      (panels_combined$overview | panels_combined$wind) /
       (panels_combined$pressure | panels_combined$visibility)
   ) +
-    patchwork::plot_layout(widths = c(1, 1), heights = c(1, 1)) +
+    patchwork::plot_layout(widths = c(1, 1), heights = c(0.28, 1, 1)) +
     patchwork::plot_annotation(
       title = prep$metadata$title,
       subtitle = prep$metadata$subtitle,
@@ -63,10 +68,10 @@ plot_metargram_gg <- function(
           hjust = 0,
           lineheight = 1.02
         ),
-        plot.margin = ggplot2::margin(6, 8, 6, 8)
+        plot.margin = ggplot2::margin(14, 16, 10, 16)
       )
     ) &
-    ggplot2::theme(plot.margin = ggplot2::margin(4, 6, 4, 6))
+    ggplot2::theme(plot.margin = ggplot2::margin(8, 10, 8, 10))
 
   list(
     panels = panels,
@@ -398,7 +403,7 @@ metargram_theme <- function(prep, show_x = TRUE, square = FALSE, panel_fill = NU
         lineheight = 1.03,
         margin = ggplot2::margin(b = 4)
       ),
-      plot.margin = ggplot2::margin(4, 5, 4, 5),
+      plot.margin = ggplot2::margin(6, 8, 6, 8),
       axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 3)),
       axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 3)),
       legend.position = "none"
@@ -432,7 +437,7 @@ metargram_scale_x <- function(prep, show_x) {
     } else {
       function(x) rep("", length(x))
     },
-    expand = ggplot2::expansion(mult = c(0, 0.01))
+    expand = ggplot2::expansion(mult = c(0.02, 0.02))
   )
 }
 
@@ -502,10 +507,11 @@ metargram_empty_panel <- function(prep, title, subtitle, y_lab, show_x, square, 
     metargram_theme(prep, show_x = show_x, square = square, panel_fill = prep$style$col_panel)
 }
 
-metargram_label_layer <- function(data, x_col, y_col, label_col, colour, prep, colour_col = NULL) {
+metargram_label_layer <- function(data, x_col, y_col, label_col, colour, prep, colour_col = NULL, nudge_col = NULL) {
   if(!nrow(data)) return(NULL)
   data <- data.table::as.data.table(data.table::copy(data))
   data[['.eff_col']] <- if(!is.null(colour_col)) data[[colour_col]] else rep(colour, nrow(data))
+  nudge_y_vec <- if(!is.null(nudge_col) && nudge_col %in% names(data)) data[[nudge_col]] else rep(0, nrow(data))
 
   if(requireNamespace("ggrepel", quietly = TRUE)) {
     ggrepel::geom_text_repel(
@@ -519,6 +525,7 @@ metargram_label_layer <- function(data, x_col, y_col, label_col, colour, prep, c
       point.padding = 0.45,
       force = 6,
       force_pull = 0.3,
+      nudge_y = nudge_y_vec,
       direction = "both",
       show.legend = FALSE,
       segment.colour = "#00000044",
@@ -590,9 +597,12 @@ metargram_panel_overview <- function(prep, show_x, square) {
   valid_y <- c(line_dat$tt, line_dat$td)
   y_lim <- range(valid_y, na.rm = TRUE)
   temp_extrema <- unique(data.table::rbindlist(list(
-    dat[!is.na(tt)][which.max(tt), .(time, value = tt, label = sprintf("Tmax %s", metargram_fmt_num(tt, 1)))],
-    dat[!is.na(tt)][which.min(tt), .(time, value = tt, label = sprintf("Tmin %s", metargram_fmt_num(tt, 1)))]
+    dat[!is.na(tt)][which.max(tt), .(time, value = tt, label = sprintf("Tmax %s", metargram_fmt_num(tt, 1)), .nudge = 1)],
+    dat[!is.na(tt)][which.min(tt), .(time, value = tt, label = sprintf("Tmin %s", metargram_fmt_num(tt, 1)), .nudge = -1)]
   ), fill = TRUE))
+  y_span <- diff(y_lim)
+  if(!is.finite(y_span) || y_span == 0) y_span <- 10
+  temp_extrema[, .nudge := .nudge * y_span * 0.08]
   zero_layer <- if(0 >= y_lim[1] && 0 <= y_lim[2]) {
     ggplot2::geom_hline(yintercept = 0, colour = "#bdbdbd", linetype = 2, linewidth = 0.35)
   } else {
@@ -637,10 +647,10 @@ metargram_panel_overview <- function(prep, show_x, square) {
       fill = "#ffffff",
       colour = prep$style$col_dark
     ) +
-    metargram_label_layer(temp_extrema, "time", "value", "label", prep$style$col_dark, prep) +
+    metargram_label_layer(temp_extrema, "time", "value", "label", prep$style$col_dark, prep, nudge_col = ".nudge") +
     ggplot2::labs(
       title = sprintf(
-        "<b>AIR MASS</b> <span style='color:%s'>T</span> <span style='color:%s'>Td</span> <span style='color:%s'>Spread</span>",
+        "<b>AIR MASS</b> <span style='color:%s'>Temperature</span> <span style='color:%s'>Dew point</span> <span style='color:%s'>Spread</span>",
         prep$style$col_temp, prep$style$col_dew, prep$style$col_mid
       ),
       subtitle = NULL,
@@ -648,7 +658,8 @@ metargram_panel_overview <- function(prep, show_x, square) {
       y = "Temperature [C]"
     ) +
     metargram_scale_x(prep, show_x = show_x) +
-    ggplot2::scale_y_continuous(limits = y_lim, expand = ggplot2::expansion(mult = c(0.12, 0.18))) +
+    ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0.15, 0.20))) +
+    ggplot2::coord_cartesian(ylim = y_lim + diff(y_lim) * c(-0.15, 0.20), clip = "off") +
     metargram_theme(prep, show_x = show_x, square = square, panel_fill = prep$style$fill_air, panel_grid = "#ededed")
 }
 
@@ -670,23 +681,24 @@ metargram_panel_wind <- function(prep, show_x, square) {
   gust_dat <- dat[!is.na(ff) & !is.na(fx) & fx > ff, .(time, ff, fx)]
   latest <- dat[!is.na(ff) | !is.na(fx)][.N]
   peak_dat <- unique(data.table::rbindlist(list(
-    line_dat[!is.na(ff)][which.max(ff), .(time, value = ff, label = sprintf("max ff %s", metargram_fmt_num(ff, 0)), col = prep$style$col_dark)],
-    line_dat[!is.na(fx)][which.max(fx), .(time, value = fx, label = sprintf("max fx %s", metargram_fmt_num(fx, 0)), col = prep$style$col_highlight)]
+    line_dat[!is.na(ff)][which.max(ff), .(time, value = ff, label = sprintf("max sustained %s", metargram_fmt_num(ff, 0)), col = prep$style$col_dark)],
+    line_dat[!is.na(fx)][which.max(fx), .(time, value = fx, label = sprintf("max gust %s", metargram_fmt_num(fx, 0)), col = prep$style$col_highlight)]
   ), fill = TRUE))
   y_lim <- range(get_range(line_dat$ff, "ff"), get_range(gust_dat$fx, "fx"), na.rm = TRUE)
   if(!all(is.finite(y_lim))) y_lim <- c(0, 40)
+  wind_span <- y_lim[2]
+  if(!is.finite(wind_span) || wind_span == 0) wind_span <- 40
+  peak_dat[, .nudge := ifelse(value == max(value), wind_span * 0.06, -wind_span * 0.06)]
 
   ggplot2::ggplot(line_dat, ggplot2::aes(x = time)) +
-    ggplot2::geom_ribbon(
-      data = gust_dat,
-      ggplot2::aes(x = time, ymin = ff, ymax = fx),
-      inherit.aes = FALSE,
-      fill = prep$style$col_highlight,
-      alpha = 0.12,
-      colour = NA
-    ) +
     metargram_line_or_point(line_dat, "ff", prep$style$col_dark, linewidth = 1.05, point_size = 2) +
-    metargram_line_or_point(line_dat, "fx", prep$style$col_highlight, linewidth = 0.85, point_size = 2) +
+    ggplot2::geom_point(
+      data = gust_dat,
+      ggplot2::aes(x = time, y = fx),
+      inherit.aes = FALSE,
+      shape = 4, size = 1.8, stroke = 0.7,
+      colour = prep$style$col_highlight
+    ) +
     ggplot2::geom_point(
       data = latest,
       ggplot2::aes(y = ff),
@@ -706,18 +718,19 @@ metargram_panel_wind <- function(prep, show_x, square) {
       fill = "#ffffff",
       colour = peak_dat$col
     ) +
-    metargram_label_layer(peak_dat, "time", "value", "label", prep$style$col_dark, prep, colour_col = "col") +
+    metargram_label_layer(peak_dat, "time", "value", "label", prep$style$col_dark, prep, colour_col = "col", nudge_col = ".nudge") +
     ggplot2::labs(
       title = sprintf(
-        "<b>WIND STRUCTURE</b> <span style='color:%s'>Sustained</span> <span style='color:%s'>Gust</span> <span style='color:%s'>Spread</span>",
-        prep$style$col_dark, prep$style$col_highlight, prep$style$col_highlight
+        "<b>WIND STRUCTURE</b> <span style='color:%s'>Sustained</span> <span style='color:%s'>Gust</span>",
+        prep$style$col_dark, prep$style$col_highlight
       ),
       subtitle = NULL,
       x = NULL,
       y = "Wind [kt]"
     ) +
     metargram_scale_x(prep, show_x = show_x) +
-    ggplot2::scale_y_continuous(limits = c(0, y_lim[2]), expand = ggplot2::expansion(mult = c(0, 0.18))) +
+    ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0, 0.20))) +
+    ggplot2::coord_cartesian(ylim = c(0, y_lim[2] * 1.20), clip = "off") +
     metargram_theme(prep, show_x = show_x, square = square, panel_fill = prep$style$fill_wind, panel_grid = "#ededed")
 }
 
@@ -736,62 +749,20 @@ metargram_panel_pressure <- function(prep, show_x, square) {
   }
 
   qnh_dat <- dat[!is.na(qnh), .(time, qnh)]
-  tend_dat <- dat[!is.na(qnh_tendency_3h), .(time, qnh_tendency_3h)]
-  tend_lim <- if(nrow(tend_dat)) max(2, ceiling(max(abs(tend_dat$qnh_tendency_3h), na.rm = TRUE))) else 4
   qnh_lim <- range(c(get_range(qnh_dat$qnh, "qnh"), 1013.25), na.rm = TRUE)
   qnh_span <- diff(qnh_lim)
   if(!is.finite(qnh_span) || qnh_span == 0) qnh_span <- 8
 
-  # Tendency zone sits above the QNH data range (visually separated by a rule)
-  tend_zone_height <- qnh_span * 0.30
-  tend_zone_lo <- qnh_lim[2]                           # separator line y
-  tend_zone_hi <- qnh_lim[2] + tend_zone_height
-  base_band    <- tend_zone_lo + tend_zone_height / 2  # centre of tendency zone
-  amp_band     <- tend_zone_height * 0.43
-  qnh_lim_extended <- c(qnh_lim[1], tend_zone_hi)
-
-  if(nrow(tend_dat)) {
-    tend_dat[, y0 := base_band]
-    tend_dat[, y1 := base_band + (qnh_tendency_3h / tend_lim) * amp_band]
-    tend_dat[, fill_col := ifelse(qnh_tendency_3h >= 0, prep$style$col_highlight, prep$style$col_dark)]
-  }
   qnh_extrema <- unique(data.table::rbindlist(list(
-    qnh_dat[which.min(qnh), .(time, value = qnh, label = sprintf("min %s", metargram_fmt_num(qnh, 1)))],
-    qnh_dat[which.max(qnh), .(time, value = qnh, label = sprintf("max %s", metargram_fmt_num(qnh, 1)))]
+    qnh_dat[which.min(qnh), .(time, value = qnh, label = sprintf("min %s", metargram_fmt_num(qnh, 1)), .nudge = -1)],
+    qnh_dat[which.max(qnh), .(time, value = qnh, label = sprintf("max %s", metargram_fmt_num(qnh, 1)), .nudge = 1)]
   ), fill = TRUE))
-  span_secs <- as.numeric(prep$metadata$x_max) - as.numeric(prep$metadata$x_min)
-  tick_x0 <- as.POSIXct(as.numeric(prep$metadata$x_min) + span_secs * 0.03, origin = "1970-01-01", tz = attr(prep$metadata$x_min, "tzone"))
-  tick_x1 <- as.POSIXct(as.numeric(prep$metadata$x_min) + span_secs * 0.08, origin = "1970-01-01", tz = attr(prep$metadata$x_min, "tzone"))
-  tend_scale <- data.table::data.table(
-    y = c(base_band + amp_band, base_band, base_band - amp_band),
-    label = c(sprintf("+%s", tend_lim), "0", sprintf("-%s", tend_lim))
-  )
-  tendency_layer <- if(nrow(tend_dat)) {
-    ggplot2::geom_segment(
-      data = tend_dat,
-      ggplot2::aes(x = time, xend = time, y = y0, yend = y1),
-      inherit.aes = FALSE,
-      linewidth = 3,
-      lineend = "butt",
-      colour = tend_dat$fill_col,
-      alpha = 0.9
-    )
-  } else {
-    NULL
-  }
-  x_min_pos <- prep$metadata$x_min
-  x_max_pos <- prep$metadata$x_max
+  qnh_data_span <- diff(qnh_lim)
+  if(!is.finite(qnh_data_span) || qnh_data_span == 0) qnh_data_span <- 8
+  qnh_extrema[, .nudge := .nudge * qnh_data_span * 0.08]
+
   ggplot2::ggplot(qnh_dat, ggplot2::aes(x = time, y = qnh)) +
-    # Shaded background for tendency zone
-    ggplot2::annotate("rect",
-      xmin = x_min_pos, xmax = x_max_pos,
-      ymin = tend_zone_lo, ymax = tend_zone_hi,
-      fill = "#f5f5f5", colour = NA, alpha = 1
-    ) +
-    # Separator rule between QNH and tendency
-    ggplot2::geom_hline(yintercept = tend_zone_lo, colour = "#bbbbbb", linewidth = 0.45) +
     ggplot2::geom_hline(yintercept = 1013.25, colour = "#d9d9d9", linetype = 2, linewidth = 0.35) +
-    tendency_layer +
     metargram_line_or_point(qnh_dat, "qnh", prep$style$col_dark, linewidth = 1.1) +
     ggplot2::geom_point(
       data = qnh_extrema,
@@ -803,34 +774,19 @@ metargram_panel_pressure <- function(prep, show_x, square) {
       fill = "#ffffff",
       colour = prep$style$col_dark
     ) +
-    metargram_label_layer(qnh_extrema, "time", "value", "label", prep$style$col_dark, prep) +
-    ggplot2::geom_segment(
-      data = tend_scale,
-      ggplot2::aes(x = tick_x0, xend = tick_x1, y = y, yend = y),
-      inherit.aes = FALSE,
-      colour = prep$style$col_mid,
-      linewidth = 0.3
-    ) +
-    ggplot2::geom_text(
-      data = tend_scale,
-      ggplot2::aes(x = tick_x1, y = y, label = label),
-      inherit.aes = FALSE,
-      hjust = -0.15,
-      family = prep$style$font_family,
-      size = prep$style$base_size / 4.5,
-      colour = prep$style$col_mid
-    ) +
+    metargram_label_layer(qnh_extrema, "time", "value", "label", prep$style$col_dark, prep, nudge_col = ".nudge") +
     ggplot2::labs(
       title = sprintf(
-        "<b>PRESSURE PULSE</b> <span style='color:%s'>QNH</span> <span style='color:%s'>3h tendency</span>",
-        prep$style$col_dark, prep$style$col_highlight
+        "<b>PRESSURE</b> <span style='color:%s'>QNH</span>",
+        prep$style$col_dark
       ),
       subtitle = NULL,
       x = NULL,
       y = "QNH [hPa]"
     ) +
     metargram_scale_x(prep, show_x = show_x) +
-    ggplot2::scale_y_continuous(limits = qnh_lim_extended, expand = ggplot2::expansion(mult = c(0.10, 0.02))) +
+    ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0.10, 0.08))) +
+    ggplot2::coord_cartesian(ylim = qnh_lim + diff(qnh_lim) * c(-0.10, 0.08), clip = "off") +
     metargram_theme(prep, show_x = show_x, square = square, panel_fill = prep$style$fill_pressure, panel_grid = "#ededed")
 }
 
@@ -858,20 +814,10 @@ metargram_panel_visibility <- function(prep, show_x, square) {
   weather_dat[is.na(sigwx_label), sigwx_label := "No sigwx"]
 
   vis_dat <- dat[, .(time, vis_km, vvis_hundreds_ft)]
-  stripe_ymin <- 16
-  stripe_ymax <- 30
-  vis_extrema <- vis_dat[!is.na(vis_km)][which.min(vis_km), .(time, value = vis_km, label = sprintf("min %s", metargram_fmt_num(vis_km, 1)))]
+  vis_extrema <- vis_dat[!is.na(vis_km)][which.min(vis_km), .(time, value = vis_km, label = sprintf("min %s", metargram_fmt_num(vis_km, 1)), .nudge = -0.15)]
 
   ggplot2::ggplot(vis_dat, ggplot2::aes(x = time)) +
     ggplot2::geom_hline(yintercept = c(0.3, 1, 5, 10), colour = "#e5e5e5", linewidth = 0.45, linetype = c(1, 2, 2, 1)) +
-    ggplot2::geom_rect(
-      data = weather_dat,
-      ggplot2::aes(xmin = time, xmax = time_end, ymin = stripe_ymin, ymax = stripe_ymax, fill = sigwx_label),
-      inherit.aes = FALSE,
-      colour = NA,
-      alpha = 0.95,
-      show.legend = TRUE
-    ) +
     metargram_step_or_point(vis_dat, "vis_km", prep$style$col_dark, linewidth = 1.15) +
     ggplot2::geom_point(ggplot2::aes(y = vvis_hundreds_ft), colour = prep$style$col_highlight, shape = 15, size = 2.3, alpha = 0.95, na.rm = TRUE) +
     ggplot2::geom_point(
@@ -884,17 +830,16 @@ metargram_panel_visibility <- function(prep, show_x, square) {
       fill = "#ffffff",
       colour = prep$style$col_dark
     ) +
-    metargram_label_layer(vis_extrema, "time", "value", "label", prep$style$col_dark, prep) +
+    metargram_label_layer(vis_extrema, "time", "value", "label", prep$style$col_dark, prep, nudge_col = ".nudge") +
     ggplot2::annotate("text", x = prep$metadata$x_max, y = c(0.35, 1.2, 6, 12), label = c("LIFR", "IFR", "MVFR", "VFR"), hjust = 1.05, family = prep$style$font_family, size = prep$style$base_size / 4.2, colour = prep$style$col_mid) +
     ggplot2::labs(
       title = sprintf(
-        "<b>VISIBILITY / WEATHER</b> <span style='color:%s'>Vis</span> <span style='color:%s'>VV</span> <span style='color:%s'>SigWx</span>",
-        prep$style$col_dark, prep$style$col_highlight, prep$style$col_mid
+        "<b>VISIBILITY</b> <span style='color:%s'>Visibility</span> <span style='color:%s'>Vert. vis.</span>",
+        prep$style$col_dark, prep$style$col_highlight
       ),
       subtitle = NULL,
       x = NULL,
-      y = "Visibility [km]",
-      fill = "SigWx"
+      y = "Visibility [km]"
     ) +
     metargram_scale_x(prep, show_x = show_x) +
     ggplot2::scale_y_log10(
@@ -902,6 +847,80 @@ metargram_panel_visibility <- function(prep, show_x, square) {
       breaks = c(0.1, 0.3, 1, 3, 10, 30),
       labels = c("0.1", "0.3", "1", "3", "10", "30")
     ) +
+    ggplot2::coord_cartesian(clip = "off") +
+    metargram_theme(prep, show_x = show_x, square = square, panel_fill = prep$style$fill_visibility, panel_grid = "#ededed")
+}
+
+metargram_panel_tendency <- function(prep, show_x, square) {
+  dat <- prep$data
+  tend_dat <- dat[!is.na(qnh_tendency_3h), .(time, qnh_tendency_3h)]
+  if(!nrow(tend_dat)) {
+    return(metargram_empty_panel(
+      prep = prep,
+      title = "3 h tendency",
+      subtitle = "QNH pressure tendency",
+      y_lab = "hPa / 3 h",
+      show_x = show_x,
+      square = square,
+      y_limits = c(-4, 4)
+    ))
+  }
+  tend_lim <- max(2, ceiling(max(abs(tend_dat$qnh_tendency_3h), na.rm = TRUE)))
+  tend_dat[, fill_col := ifelse(qnh_tendency_3h >= 0, prep$style$col_highlight, prep$style$col_dark)]
+
+  ggplot2::ggplot(tend_dat, ggplot2::aes(x = time)) +
+    ggplot2::geom_hline(yintercept = 0, colour = "#bbbbbb", linewidth = 0.45) +
+    ggplot2::geom_segment(
+      ggplot2::aes(x = time, xend = time, y = 0, yend = qnh_tendency_3h),
+      linewidth = 3,
+      lineend = "butt",
+      colour = tend_dat$fill_col,
+      alpha = 0.9
+    ) +
+    ggplot2::labs(
+      title = sprintf(
+        "<b>3 H TENDENCY</b> <span style='color:%s'>Rising</span> <span style='color:%s'>Falling</span>",
+        prep$style$col_highlight, prep$style$col_dark
+      ),
+      subtitle = NULL,
+      x = NULL,
+      y = "hPa / 3 h"
+    ) +
+    metargram_scale_x(prep, show_x = show_x) +
+    ggplot2::scale_y_continuous(
+      limits = c(-tend_lim, tend_lim),
+      breaks = seq(-tend_lim, tend_lim, by = max(1, round(tend_lim / 3))),
+      expand = ggplot2::expansion(mult = c(0.05, 0.05))
+    ) +
+    metargram_theme(prep, show_x = show_x, square = square, panel_fill = "#fafafa", panel_grid = "#ededed")
+}
+
+metargram_panel_sigwx <- function(prep, show_x, square) {
+  dat <- prep$data
+  sigwx_lookup <- metar.class[id_para == "sigwx"][1:10, .(id_class, short_class, col)]
+  weather_dat <- dat[, .(time, time_end, sigwx)]
+  weather_dat[is.na(sigwx) | sigwx == "", sigwx := "NOSIG"]
+  sigwx_lookup[, sigwx_label := ifelse(is.na(short_class) | short_class == "", id_class, short_class)]
+  sigwx_cols <- c(stats::setNames(sigwx_lookup$col, sigwx_lookup$sigwx_label), "No sigwx" = "#f5f5f5")
+  weather_dat[, sigwx_label := sigwx_lookup$sigwx_label[match(sigwx, sigwx_lookup$id_class)]]
+  weather_dat[is.na(sigwx_label), sigwx_label := "No sigwx"]
+
+  ggplot2::ggplot(weather_dat, ggplot2::aes(x = time)) +
+    ggplot2::geom_rect(
+      ggplot2::aes(xmin = time, xmax = time_end, ymin = 0, ymax = 1, fill = sigwx_label),
+      colour = NA,
+      alpha = 0.95,
+      show.legend = TRUE
+    ) +
+    ggplot2::labs(
+      title = "<b>SIGNIFICANT WEATHER</b>",
+      subtitle = NULL,
+      x = NULL,
+      y = NULL,
+      fill = "SigWx"
+    ) +
+    metargram_scale_x(prep, show_x = show_x) +
+    ggplot2::scale_y_continuous(breaks = 0.5, labels = function(x) rep("", length(x)), expand = ggplot2::expansion(mult = 0)) +
     ggplot2::scale_fill_manual(
       values = sigwx_cols,
       drop = FALSE,
@@ -912,10 +931,10 @@ metargram_panel_visibility <- function(prep, show_x, square) {
         title.position = "left"
       )
     ) +
-    ggplot2::coord_cartesian(clip = "off") +
-    metargram_theme(prep, show_x = show_x, square = square, panel_fill = prep$style$fill_visibility, panel_grid = "#ededed") +
+    metargram_theme(prep, show_x = show_x, square = square, panel_fill = "#fafafa", panel_grid = "#ededed") +
     ggplot2::theme(
-      plot.margin = ggplot2::margin(6, 10, 6, 8),
+      axis.text.y = ggplot2::element_text(colour = "transparent", size = prep$style$base_size * 0.75),
+      panel.grid.major.y = ggplot2::element_blank(),
       legend.position = "bottom",
       legend.justification = c(0, 0),
       legend.direction = "horizontal",
