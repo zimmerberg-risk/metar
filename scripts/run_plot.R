@@ -20,7 +20,7 @@ get_metar_stn(fi.ctry = "Ice")
 ww <- c("RJAW", "PTRO", "PTYA", "BIKF", "YGEL", "LSZH", "LSZA", "FTTJ", "GABS", "GCXO", "NZSP", "LOWI",
         "UUDD", "GCXO", "WSSS", "BGTL", "SBMN", "OMDB", "KBOS")
 
-gu <- c("PGSN", "PGRO", "PGUM")
+gu <- c("PGSN", "PGRO", "PGUM", "PGUA")
 au <- c("YAYE", "YSSY", "YMML", "YPPH", "YMLT", "YPDN", "NZAA", "NZCH", "NFNA", "NVVV", "YBAS")
 au.darwin <- c("YPDN", "YPYM", "YPWR", "YBRK")
 au.west <- c("YPLM", "YBAS", "YMLT", "YPDN", "YPPH")
@@ -29,6 +29,7 @@ nz <- c("NZAA", "NZWN", "YSNF")
 cn <- c("ZJSY", "ZJHK", "VMMC", "VHHH")
 jp <- c("RJTT", "RJAA", "RJNS", "RJAW", "RODN", "RODE", "ROTM", "ROIG", "ROYN", "RORS", "ROMY", "ROAH", "RJFE", "RJDT", "RJDB", "RJNK", "RJNT",
         "RJKA", "RJKI", "RJFG", "RJFK", "RJFM", "RJFY", "RJFT", "RJFU")
+jp.okinawa <- c("ROAH", "RODN", "RODE", "ROTM", "ROIG", "ROYN", "RORS", "ROMY", "RORY", "RJKB", "RJKA", "RJKI", "RORT", "ROIG", "ROYN")
 kr = c("RKPM", "RKPC", "RKPK", "RKJB")
 mt = c("FIMP", "FMEE", "FMEP")
 
@@ -68,7 +69,7 @@ us.fl <- c("KEYW", "KSRQ", "KSPG","KVNC", "KPGD", "KRSW", "KAPF")
 us.tx <- c("KSAT", "KDFW", "KAUS")
 # ---------------------------------------- Plot Metargram -----------------------------------------------
 
-folder <- "au.west"
+folder <- "jp.okinawa"
 id.icao <-  get(folder) #"LSZH" #CYYT RCFN RCKH ROYN ROIG    URSS URKK LTFH LICZ URKA
 
 date.end <- Sys.Date()#  "2021-04-01" as.Date("2000-04-29")
@@ -81,8 +82,14 @@ void <- lapply(id.icao, function(id.icao){
   # id.icao <- "EINN"
   cat(id.icao, " ", metar.stn[icao == id.icao, ap_name], as.character(date.start), as.character(date.end), "\n")
 
-  dat.metar <- read_metar_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end)
-  if(nrow(dat.metar) == 0) return(NULL)
+        dat.metar <- tryCatch(
+                read_metar_mesonet(id_icao = id.icao, date_start = date.start, date_end = date.end),
+                error = function(e){
+                        message(sprintf("Skipping %s: %s", id.icao, conditionMessage(e)))
+                        NULL
+                }
+        )
+        if(is.null(dat.metar) || nrow(dat.metar) == 0) return(NULL)
 
   dat.parsed <- parse_metar(x = dat.metar$metar, t = dat.metar$valid)
   dat.parsed <- try(validate_metar(dat.parsed))
